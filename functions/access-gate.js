@@ -1,8 +1,8 @@
 const COOKIE_NAME = "trip_access";
 const SCOPE = "trip-access-v1";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
-const EMBEDDED_EDIT_PASSWORD_SHA256 = "b1ffa8caccfbdbc47089aa2cf2502e269245fb53741726bef5dd0160b5bed9c4";
-const EMBEDDED_READ_PASSWORD_SHA256 = "35f5a105db17f70c35cf485352f1539d23ff4d6d879e375be987f97004b59128";
+const EMBEDDED_EDIT_PASSWORD_SHA256 = "aad3afbb8a6388aa8b081c423634390830a4926da84c73cf9d644894b08fbe14";
+const EMBEDDED_READ_PASSWORD_SHA256 = "15e2b0d3c33891ebb0f1ef609ec419420c20e320ce94c65fbc8c3312448eb225";
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (character) => ({
