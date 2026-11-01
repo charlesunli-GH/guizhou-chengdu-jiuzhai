@@ -207,7 +207,9 @@
         "to": "黄果树",
         "mode": "包车",
         "time": "10:00",
-        "duration": "02:00"
+        "duration": "02:00",
+        "driverPhone": "18621525837",
+        "licensePlate": "沪 AAR8023"
       },
       {
         "id": "bus-hgs-wfl",
@@ -309,7 +311,9 @@
           "id": "d1-bus-hgs",
           "time": "10:00",
           "type": "drive",
-          "text": "包车前往黄果树，约 2 小时",
+          "text": "包车前往黄果树，约 2 小时。司机 18621525837，车牌 沪 AAR8023",
+          "driverPhone": "18621525837",
+          "licensePlate": "沪 AAR8023",
           "placeIds": [
             "kwe",
             "huangguoshu"

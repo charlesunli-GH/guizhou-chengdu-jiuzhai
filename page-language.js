@@ -37,6 +37,7 @@
     "票种、订单和 PDF 待确认": "Ticket type, booking, and PDF to be confirmed",
     "上海航空 FM9463，虹桥 T2 → 贵阳龙洞堡 T2，09:30 抵达": "Shanghai Airlines FM9463, Hongqiao T2 → Guiyang Longdongbao T2, arrive 09:30",
     "南方航空 CZ8198，天府 T2 → 浦东 T2，22:30 抵达": "China Southern CZ8198, Tianfu T2 → Pudong T2, arrive 22:30",
+    "包车前往黄果树，约 2 小时。司机 18621525837，车牌 沪 AAR8023": "Chartered bus to Huangguoshu, about 2 hours. Driver 18621525837, plate 沪 AAR8023",
     "包车前往黄果树，约 2 小时": "Chartered bus to Huangguoshu, about 2 hours",
     "包车前往万峰林，约 2 小时 45 分，19:15 到达": "Chartered bus to Wanfenglin, about 2 hours 45 min, arrive 19:15",
     "入住万峰林酒店。酒店名称待确认。": "Check in at the Wanfenglin hotel. Hotel name to be confirmed.",
