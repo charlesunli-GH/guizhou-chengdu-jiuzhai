@@ -149,6 +149,7 @@
   let notice = "";
   let billDraft = null;
   let editingMemberId = null;
+  let editingFamilyId = null;
   let editingNoteBillId = null;
   let pendingNoteSave = null;
   let noteOpenRequest = 0;
@@ -303,11 +304,37 @@
     });
     return {
       version: STORAGE_VERSION,
-      settings: { baseCurrency, commonCurrencies, lastCurrency },
+      settings: {
+        baseCurrency,
+        commonCurrencies,
+        lastCurrency,
+        families: normalizeFamilies(raw.settings?.families, travelerIds)
+      },
       travelers,
       bills,
       updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : fallback.updatedAt
     };
+  }
+
+  function normalizeFamilies(rawFamilies, travelerIds) {
+    const usedFamilyIds = new Set();
+    const usedMembers = new Set();
+    if (!Array.isArray(rawFamilies)) return [];
+    return rawFamilies.flatMap((family, index) => {
+      const name = String(family?.name || "").trim().slice(0, 30);
+      if (!name) return [];
+      let id = String(family?.id || "").trim();
+      if (!id || usedFamilyIds.has(id)) id = makeId("family");
+      usedFamilyIds.add(id);
+      const memberIds = [...new Set(Array.isArray(family?.memberIds) ? family.memberIds.map(String) : [])]
+        .filter((memberId) => travelerIds.has(memberId) && !usedMembers.has(memberId));
+      if (!memberIds.length) return [];
+      memberIds.forEach((memberId) => usedMembers.add(memberId));
+      const color = isValidColor(family?.color)
+        ? family.color.toUpperCase()
+        : AVATAR_COLORS[index % AVATAR_COLORS.length];
+      return [{ id, name, initial: avatarInitial(name), color, memberIds }];
+    });
   }
 
   function createLocalStorageAdapter(tripId, options = {}) {
@@ -530,39 +557,22 @@
     }));
   }
 
-  function calculateStats() {
-    const members = ledgerData.travelers.map((traveler) => ({
-      traveler,
-      paidCents: 0,
-      owedCents: 0,
-      netCents: 0,
-      billIds: []
-    }));
-    const byId = new Map(members.map((entry) => [entry.traveler.id, entry]));
-    ledgerData.bills.forEach((bill) => {
-      const payer = byId.get(bill.payerId);
-      if (payer) {
-        payer.paidCents += bill.baseAmountCents;
-        payer.billIds.push(bill.id);
-      }
-      billShares(bill).forEach((amount, participantId) => {
-        const member = byId.get(participantId);
-        if (!member) return;
-        member.owedCents += amount;
-        if (!member.billIds.includes(bill.id)) member.billIds.push(bill.id);
-      });
-    });
-    members.forEach((member) => {
-      member.netCents = member.paidCents - member.owedCents;
-    });
+  function families() {
+    return ledgerData.settings.families || [];
+  }
 
-    const debtors = members
-      .filter((member) => member.netCents < 0)
-      .map((member) => ({ id: member.traveler.id, amount: -member.netCents }))
+  function familyOwning(memberId, exceptFamilyId = "") {
+    return families().find((family) => family.id !== exceptFamilyId && family.memberIds.includes(memberId)) || null;
+  }
+
+  function minimalTransfers(units) {
+    const debtors = units
+      .filter((unit) => unit.netCents < 0)
+      .map((unit) => ({ id: unit.id, amount: -unit.netCents }))
       .sort((first, second) => second.amount - first.amount || first.id.localeCompare(second.id));
-    const creditors = members
-      .filter((member) => member.netCents > 0)
-      .map((member) => ({ id: member.traveler.id, amount: member.netCents }))
+    const creditors = units
+      .filter((unit) => unit.netCents > 0)
+      .map((unit) => ({ id: unit.id, amount: unit.netCents }))
       .sort((first, second) => second.amount - first.amount || first.id.localeCompare(second.id));
     const transferMemo = new Map();
     const settle = (debtAmounts, creditAmounts) => {
@@ -594,7 +604,7 @@
       transferMemo.set(memoKey, result);
       return result;
     };
-    const transfers = settle(
+    return settle(
       debtors.map((debtor) => debtor.amount),
       creditors.map((creditor) => creditor.amount)
     ).map((transfer) => ({
@@ -602,16 +612,194 @@
       toId: creditors[transfer.creditorIndex].id,
       amountCents: transfer.amountCents
     }));
+  }
+
+  function settlementParties(members) {
+    const memberById = new Map(members.map((member) => [member.traveler.id, member]));
+    const assigned = new Set();
+    const parties = [];
+    families().forEach((family) => {
+      const groupMembers = family.memberIds.map((id) => memberById.get(id)).filter(Boolean);
+      groupMembers.forEach((member) => assigned.add(member.traveler.id));
+      if (!groupMembers.length) return;
+      parties.push({
+        id: family.id,
+        kind: "family",
+        name: family.name,
+        initial: family.initial,
+        color: family.color,
+        memberNames: groupMembers.map((member) => member.traveler.name),
+        netCents: groupMembers.reduce((sum, member) => sum + member.netCents, 0),
+        paidCents: groupMembers.reduce((sum, member) => sum + member.paidCents, 0),
+        owedCents: groupMembers.reduce((sum, member) => sum + member.owedCents, 0)
+      });
+    });
+    members.forEach((member) => {
+      if (assigned.has(member.traveler.id)) return;
+      parties.push({
+        id: member.traveler.id,
+        kind: "person",
+        name: member.traveler.name,
+        traveler: member.traveler,
+        memberNames: [member.traveler.name],
+        netCents: member.netCents,
+        paidCents: member.paidCents,
+        owedCents: member.owedCents
+      });
+    });
+    return parties;
+  }
+
+  function calculateStats() {
+    const members = ledgerData.travelers.map((traveler) => ({
+      traveler,
+      paidCents: 0,
+      owedCents: 0,
+      netCents: 0,
+      billIds: []
+    }));
+    const byId = new Map(members.map((entry) => [entry.traveler.id, entry]));
+    ledgerData.bills.forEach((bill) => {
+      const payer = byId.get(bill.payerId);
+      if (payer) {
+        payer.paidCents += bill.baseAmountCents;
+        payer.billIds.push(bill.id);
+      }
+      billShares(bill).forEach((amount, participantId) => {
+        const member = byId.get(participantId);
+        if (!member) return;
+        member.owedCents += amount;
+        if (!member.billIds.includes(bill.id)) member.billIds.push(bill.id);
+      });
+    });
+    members.forEach((member) => {
+      member.netCents = member.paidCents - member.owedCents;
+      member.family = familyOwning(member.traveler.id);
+    });
+    const parties = settlementParties(members);
+    const transfers = minimalTransfers(members.map((member) => ({
+      id: member.traveler.id,
+      netCents: member.netCents
+    })));
+    const usesFamilies = families().length > 0;
     return {
       totalCents: ledgerData.bills.reduce((sum, bill) => sum + bill.baseAmountCents, 0),
       members,
-      transfers
+      transfers,
+      parties,
+      settlementTransfers: usesFamilies ? minimalTransfers(parties) : transfers,
+      usesFamilies
     };
   }
 
   function renderAvatar(traveler, size = "normal") {
     if (!traveler) return "";
     return `<span class="ledger-avatar ledger-avatar-${escapeAttribute(size)}" style="--ledger-avatar-color:${escapeAttribute(traveler.color)}" aria-hidden="true">${escapeHtml(traveler.initial)}</span>`;
+  }
+
+  function renderFamilyAvatar(family, size = "normal") {
+    if (!family) return "";
+    return `<span class="ledger-avatar ledger-avatar-${escapeAttribute(size)}" style="--ledger-avatar-color:${escapeAttribute(family.color || "#217D91")}" aria-hidden="true">${escapeHtml(family.initial || avatarInitial(family.name || "家"))}</span>`;
+  }
+
+  function renderFamilySection() {
+    const groups = families();
+    return `
+      <section class="ledger-family-section" aria-label="家庭">
+        <div class="ledger-members-strip-heading">
+          <div><strong>家庭</strong><span>${groups.length ? `${groups.length} 个` : "按家庭结算"}</span></div>
+          <button class="ledger-text-button" type="button" data-ledger-action="open-families">${groups.length ? "管理" : "添加家庭"}</button>
+        </div>
+        ${groups.length ? `
+          <div class="ledger-family-list">
+            ${groups.map((family) => {
+              const names = family.memberIds.map((id) => travelerById(id)?.name).filter(Boolean);
+              return `
+                <article class="ledger-family-card">
+                  <span class="ledger-member-identity">${renderFamilyAvatar(family)}<span><strong>${escapeHtml(family.name)}</strong><small>${names.length} 人 · ${escapeHtml(names.join("、"))}</small></span></span>
+                  <button class="ledger-text-button" type="button" data-ledger-action="edit-family" data-ledger-id="${escapeAttribute(family.id)}">编辑</button>
+                </article>`;
+            }).join("")}
+          </div>` : `<p class="ledger-family-empty">把一起结账的人编成一个家庭。例如 4 个人组成一个家庭后，家庭内部的账会先抵消，最后只按家庭结算。</p>`}
+      </section>`;
+  }
+
+  function renderSettlementRow(transfer, parties, baseCurrency) {
+    const partyById = new Map(parties.map((party) => [party.id, party]));
+    const from = partyById.get(transfer.fromId);
+    const to = partyById.get(transfer.toId);
+    const avatar = from?.kind === "family" ? renderFamilyAvatar(from) : renderAvatar(from?.traveler);
+    const detail = from?.kind === "family" ? from.memberNames.join("、") : "";
+    return `
+      <div class="ledger-transfer-row">
+        <div class="ledger-transfer-person">
+          ${avatar}
+          <span>
+            <strong>${escapeHtml(from?.name || "")}</strong>
+            <small>转给 ${escapeHtml(to?.name || "")}${detail ? ` · ${escapeHtml(detail)}` : ""}</small>
+          </span>
+        </div>
+        <strong class="ledger-transfer-amount">${escapeHtml(formatMoney(transfer.amountCents, baseCurrency))}</strong>
+      </div>`;
+  }
+
+  function renderFamiliesDialog() {
+    const groups = families();
+    const editing = groups.find((family) => family.id === editingFamilyId) || null;
+    const selected = new Set(editing?.memberIds || []);
+    return `
+      <dialog class="ledger-dialog ledger-members-dialog" data-ledger-dialog="families" aria-labelledby="ledger-families-dialog-title">
+        <div class="ledger-dialog-header">
+          <div>
+            <p class="ledger-section-kicker">家庭</p>
+            <h2 id="ledger-families-dialog-title">${editing ? "编辑家庭" : "添加家庭"}</h2>
+          </div>
+          <button class="ledger-dialog-close" type="button" data-ledger-action="close-dialog" aria-label="关闭">×</button>
+        </div>
+        <div class="ledger-dialog-body">
+          ${groups.length ? `
+            <div class="ledger-family-edit-list">
+              ${groups.map((family) => `
+                <div class="ledger-member-edit-row ledger-member-edit-row-static">
+                  ${renderFamilyAvatar(family)}
+                  <span><strong>${escapeHtml(family.name)}</strong><small>${family.memberIds.length} 人</small></span>
+                  <span class="ledger-member-edit-actions">
+                    <button class="ledger-text-button" type="button" data-ledger-action="edit-family" data-ledger-id="${escapeAttribute(family.id)}">编辑</button>
+                    <button class="ledger-icon-button ledger-danger-button" type="button" data-ledger-action="delete-family" data-ledger-id="${escapeAttribute(family.id)}" aria-label="删除 ${escapeAttribute(family.name)}">删除</button>
+                  </span>
+                </div>`).join("")}
+            </div>` : `<p class="ledger-dialog-empty">还没有家庭。一个家庭可以包含多人，结算时作为一个整体。</p>`}
+          <form class="ledger-family-form" data-ledger-form="family-save">
+            <label class="ledger-field">
+              <span class="ledger-field-label">家庭名称</span>
+              <input class="ledger-input" name="name" maxlength="30" placeholder="例如：张家" value="${escapeAttribute(editing?.name || "")}" autocomplete="off" required>
+            </label>
+            <fieldset class="ledger-fieldset">
+              <legend>家庭成员<small>至少 2 人</small></legend>
+              ${ledgerData.travelers.length ? `
+                <div class="ledger-person-grid">
+                  ${ledgerData.travelers.map((traveler) => {
+                    const other = familyOwning(traveler.id, editing?.id || "");
+                    return `
+                      <label class="ledger-person-choice">
+                        <input class="ledger-person-input" type="checkbox" name="memberIds" value="${escapeAttribute(traveler.id)}" ${selected.has(traveler.id) ? "checked" : ""}>
+                        <span class="ledger-person-visual">
+                          ${renderAvatar(traveler)}
+                          <span class="ledger-person-check" aria-hidden="true">✓</span>
+                        </span>
+                        <span class="ledger-person-name">${escapeHtml(traveler.name)}${other ? `<small>现属${escapeHtml(other.name)}</small>` : ""}</span>
+                      </label>`;
+                  }).join("")}
+                </div>` : `<p class="ledger-dialog-empty">请先添加同行人。</p>`}
+            </fieldset>
+            <div class="ledger-form-actions">
+              ${editing ? `<button class="ledger-text-button" type="button" data-ledger-action="cancel-family-edit">取消编辑</button>` : ""}
+              <button class="ledger-secondary-button" type="submit">${editing ? "保存家庭" : "添加家庭"}</button>
+            </div>
+          </form>
+          <p class="ledger-dialog-note">选中已属于其他家庭的人，保存后会改到这个家庭。最终转账按家庭计算，不再在家庭内部互相转。</p>
+        </div>
+      </dialog>`;
   }
 
   function renderPersonChoice(traveler, type, name, selected) {
@@ -915,6 +1103,7 @@
             <button class="ledger-add-person" type="button" data-ledger-action="open-members" aria-label="添加同行人"><span aria-hidden="true">＋</span><small>添加</small></button>
           </div>
         </section>
+        ${renderFamilySection()}
         ${renderBillForm()}
         ${renderBillList()}
       </section>`;
@@ -945,30 +1134,37 @@
           <span>${ledgerData.bills.length} 笔账单 · 以 ${escapeHtml(baseCurrency)} 结算</span>
         </section>
 
+        ${stats.usesFamilies ? `
+          <section class="ledger-family-balance-section" aria-labelledby="ledger-family-balance-title">
+            <div class="ledger-section-heading">
+              <div>
+                <p class="ledger-section-kicker">家庭汇总</p>
+                <h2 id="ledger-family-balance-title">各家庭的差额</h2>
+              </div>
+            </div>
+            <div class="ledger-family-balance-list">
+              ${stats.parties.filter((party) => party.kind === "family").map((party) => `
+                <article class="ledger-family-balance">
+                  <span class="ledger-member-identity">${renderFamilyAvatar(party)}<span><strong>${escapeHtml(party.name)}</strong><small>${escapeHtml(party.memberNames.join("、"))}</small></span></span>
+                  <span class="${party.netCents > 0 ? "ledger-positive" : party.netCents < 0 ? "ledger-negative" : "ledger-neutral"}">${party.netCents > 0 ? "应收 " : party.netCents < 0 ? "应付 " : "已结清 "}${party.netCents === 0 ? "" : escapeHtml(formatMoney(Math.abs(party.netCents), baseCurrency))}</span>
+                </article>`).join("")}
+            </div>
+          </section>` : ""}
+
         <section class="ledger-settlement-section" aria-labelledby="ledger-settlement-title">
           <div class="ledger-section-heading">
             <div>
-              <p class="ledger-section-kicker">结算方案</p>
-              <h2 id="ledger-settlement-title">谁需要转给谁</h2>
+              <p class="ledger-section-kicker">${stats.usesFamilies ? "家庭结算" : "结算方案"}</p>
+              <h2 id="ledger-settlement-title">${stats.usesFamilies ? "家庭之间怎么结算" : "谁需要转给谁"}</h2>
             </div>
-            <span class="ledger-soft-count">${stats.transfers.length} 笔转账</span>
+            <span class="ledger-soft-count">${stats.settlementTransfers.length} 笔转账</span>
           </div>
-          ${stats.transfers.length ? `
+          ${stats.usesFamilies ? `<p class="ledger-family-settlement-note">同一家庭内部的差额会先互相抵消。最后只在家庭之间转账；没加入家庭的人仍按个人结算。</p>` : ""}
+          ${stats.settlementTransfers.length ? `
             <div class="ledger-transfer-list">
-              ${stats.transfers.map((transfer) => {
-                const from = travelerById(transfer.fromId);
-                const to = travelerById(transfer.toId);
-                return `
-                  <div class="ledger-transfer-row">
-                    <div class="ledger-transfer-person">
-                      ${renderAvatar(from)}
-                      <span><strong>${escapeHtml(from?.name || "")}</strong><small>转给 ${escapeHtml(to?.name || "")}</small></span>
-                    </div>
-                    <strong class="ledger-transfer-amount">${escapeHtml(formatMoney(transfer.amountCents, baseCurrency))}</strong>
-                  </div>`;
-              }).join("")}
+              ${stats.settlementTransfers.map((transfer) => renderSettlementRow(transfer, stats.parties, baseCurrency)).join("")}
             </div>` : `
-            <div class="ledger-empty-state"><p>${ledgerData.bills.length ? "大家已经结清，无需转账。" : "添加账单后，这里会自动生成结算单。"}</p></div>`}
+            <div class="ledger-empty-state"><p>${ledgerData.bills.length ? "已经结清，无需转账。" : "添加账单后，这里会自动生成结算单。"}</p></div>`}
         </section>
 
         <section class="ledger-member-stats-section" aria-labelledby="ledger-member-stats-title">
@@ -983,7 +1179,7 @@
               ${stats.members.map((member) => `
                 <details class="ledger-member-stat" open>
                   <summary class="ledger-member-stat-summary">
-                    <span class="ledger-member-identity">${renderAvatar(member.traveler)}<strong>${escapeHtml(member.traveler.name)}</strong></span>
+                    <span class="ledger-member-identity">${renderAvatar(member.traveler)}<span><strong>${escapeHtml(member.traveler.name)}</strong>${member.family ? `<small>${escapeHtml(member.family.name)}</small>` : ""}</span></span>
                     <span class="ledger-member-chevron" aria-hidden="true">›</span>
                   </summary>
                   <div class="ledger-member-stat-body">
@@ -1178,6 +1374,7 @@
         ${renderEntryPage()}
         ${renderStatsPage()}
         ${renderMembersDialog()}
+        ${renderFamiliesDialog()}
         ${renderSettingsDialog()}
         ${renderCurrencyDialog()}
       </div>`;
@@ -1613,6 +1810,63 @@
     });
   }
 
+  async function submitFamily(form) {
+    const formData = new FormData(form);
+    const name = String(formData.get("name") || "").trim().slice(0, 30);
+    const memberIds = [...new Set(formData.getAll("memberIds").map(String))];
+    if (!name) {
+      form.elements.name?.focus();
+      setNotice("请填写家庭名称。");
+      return;
+    }
+    if (families().some((family) => family.id !== editingFamilyId && family.name === name)) {
+      form.elements.name?.focus();
+      setNotice("已有同名家庭，请换一个名称。");
+      return;
+    }
+    if (memberIds.length < 2) {
+      setNotice("一个家庭至少选择两个人。");
+      return;
+    }
+    const editingId = editingFamilyId;
+    const color = families().find((family) => family.id === editingId)?.color || AVATAR_COLORS[families().length % AVATAR_COLORS.length];
+    captureBillDraft();
+    openDialogName = "families";
+    await mutateData((next) => {
+      const nextFamilies = (next.settings.families || []).map((family) => ({
+        ...family,
+        memberIds: family.memberIds.filter((memberId) => !memberIds.includes(memberId))
+      })).filter((family) => family.memberIds.length && family.id !== editingId);
+      const id = editingId || makeId("family");
+      nextFamilies.push({
+        id,
+        name,
+        initial: avatarInitial(name),
+        color,
+        memberIds
+      });
+      next.settings.families = nextFamilies;
+    }, {
+      reason: editingId ? "family-updated" : "family-added",
+      message: editingId ? "家庭已更新" : "家庭已添加",
+      afterSuccess() { editingFamilyId = null; }
+    });
+  }
+
+  async function deleteFamily(id) {
+    const family = families().find((entry) => entry.id === id);
+    if (!family || !await confirmLedgerAction(`删除家庭“${family.name}”？成员会保留，只是不再按这个家庭结算。`)) return;
+    captureBillDraft();
+    openDialogName = "families";
+    await mutateData((next) => {
+      next.settings.families = (next.settings.families || []).filter((entry) => entry.id !== id);
+    }, {
+      reason: "family-deleted",
+      message: `${family.name}已移除`,
+      afterSuccess() { if (editingFamilyId === id) editingFamilyId = null; }
+    });
+  }
+
   async function deleteMember(id) {
     const traveler = travelerById(id);
     if (!traveler) return;
@@ -1633,6 +1887,10 @@
     openDialogName = "members";
     await mutateData((next) => {
       next.travelers = next.travelers.filter((entry) => entry.id !== id);
+      next.settings.families = (next.settings.families || []).flatMap((family) => {
+        const memberIds = family.memberIds.filter((memberId) => memberId !== id);
+        return memberIds.length ? [{ ...family, memberIds }] : [];
+      });
     }, { reason: "member-deleted", message: `${traveler.name}已移除` });
   }
 
@@ -1712,6 +1970,22 @@
     } else if (action === "open-members") {
       captureBillDraft();
       showDialog("members");
+    } else if (action === "open-families") {
+      captureBillDraft();
+      editingFamilyId = null;
+      showDialog("families");
+    } else if (action === "edit-family") {
+      captureBillDraft();
+      editingFamilyId = button.dataset.ledgerId || null;
+      openDialogName = "families";
+      renderApp();
+      requestAnimationFrame(() => ledgerRoot.querySelector('[data-ledger-form="family-save"] input[name="name"]')?.focus());
+    } else if (action === "cancel-family-edit") {
+      editingFamilyId = null;
+      openDialogName = "families";
+      renderApp();
+    } else if (action === "delete-family") {
+      deleteFamily(button.dataset.ledgerId || "");
     } else if (action === "open-settings") {
       captureBillDraft();
       showDialog("settings");
@@ -1808,6 +2082,7 @@
     if (form.dataset.ledgerForm === "bill") await submitBill(form);
     if (form.dataset.ledgerForm === "member-add") await submitMemberAdd(form);
     if (form.dataset.ledgerForm === "member-edit") await submitMemberEdit(form);
+    if (form.dataset.ledgerForm === "family-save") await submitFamily(form);
   }
 
   function handleRootKeydown(event) {

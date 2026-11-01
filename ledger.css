@@ -154,6 +154,22 @@ body[data-active-view="ledger"] .topbar { background: rgba(250, 251, 249, .93); 
 .ledger-add-person { min-height: 67px; padding: 0; border: 0; color: var(--lake); background: transparent; cursor: pointer; }
 .ledger-add-person > span { width: 42px; height: 42px; display: grid; place-items: center; border: 1px dashed #a7c4c8; border-radius: 50%; font-size: 23px; font-weight: 400; }
 .ledger-add-person small { font-size: 10px; }
+.ledger-family-section { margin-top: 22px; }
+.ledger-family-empty, .ledger-family-settlement-note { margin: 10px 0 0; color: #7d8b8c; font-size: 12px; line-height: 1.55; }
+.ledger-family-list, .ledger-family-balance-list, .ledger-family-edit-list { display: grid; gap: 10px; margin-top: 14px; }
+.ledger-family-card, .ledger-family-balance {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 14px; border: 1px solid rgba(19,38,47,.1); border-radius: 16px; background: #fff;
+  box-shadow: 0 10px 26px rgba(18,42,50,.04);
+}
+.ledger-family-card .ledger-member-identity, .ledger-family-balance .ledger-member-identity, .ledger-member-stat-summary .ledger-member-identity { align-items: center; }
+.ledger-member-identity > span { min-width: 0; display: grid; gap: 2px; }
+.ledger-member-identity small, .ledger-family-form .ledger-person-name small { color: #8a9798; font-size: 10px; font-weight: 650; }
+.ledger-family-form { display: grid; gap: 16px; margin-top: 18px; }
+.ledger-family-form .ledger-person-name { white-space: normal; line-height: 1.35; }
+.ledger-form-actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+.ledger-family-balance-section { margin-top: 30px; }
+.ledger-family-edit-list .ledger-member-edit-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; }
 .ledger-avatar { --ledger-avatar-color: #287b90; width: 42px; height: 42px; display: inline-grid; flex: 0 0 auto; place-items: center; border-radius: 50%; color: #fff; background: var(--ledger-avatar-color); font-size: 17px; font-weight: 790; line-height: 1; }
 .ledger-avatar-small { width: 28px; height: 28px; font-size: 11px; }
 .ledger-avatar-tiny { width: 24px; height: 24px; font-size: 10px; }
