@@ -296,16 +296,45 @@ function overlaps(a, b) {
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 }
 
+function localFeatureOf(place) {
+  return String(place?.localFeature || "").replace(/\s+/g, " ").trim();
+}
+
+function labelTextWidth(text, fontSize) {
+  let width = 0;
+  for (const char of String(text || "")) {
+    if (/\s/.test(char)) width += fontSize * 0.33;
+    else if ("·・/".includes(char)) width += fontSize * 0.55;
+    else if (char.codePointAt(0) < 128) width += fontSize * 0.56;
+    else width += fontSize;
+  }
+  return width;
+}
+
+function labelMetrics(place) {
+  const feature = localFeatureOf(place);
+  const primary = String(place.name || place.nameZh || place.id || "");
+  const secondary = place.nameZh && place.nameZh !== primary ? String(place.nameZh) : "";
+  const legacyWidth = Math.max(154, Math.min(330, Math.max(String(place.name || "").length, String(place.nameZh || "").length * 2) * 13));
+  if (!feature) return { feature: "", width: legacyWidth, height: 58, lines: secondary ? [`${primary} /`, secondary] : [primary] };
+  const measured = Math.max(labelTextWidth(primary, 24), secondary ? labelTextWidth(secondary, 24) : 0, labelTextWidth(feature, 24));
+  const width = Math.max(legacyWidth, Math.min(360, Math.ceil(measured)));
+  const extraLines = (secondary ? 1 : 0) + 1;
+  const lines = secondary ? [`${primary} /`, secondary] : [primary];
+  lines.push(feature);
+  return { feature, width, height: Math.max(58, 26 + extraLines * 31 + 6), lines };
+}
+
 function labelFor(place, index, occupied) {
   const choices = [[32, -32], [32, 50], [-32, -32], [-32, 50], [78, -62], [78, 76], [-78, -62], [-78, 76], [138, -88], [-138, -88], [138, 102], [-138, 102]];
   const automatic = choices.map((_, offset) => choices[(offset + index * 2) % choices.length]);
   const candidates = place.labelOffset ? [[place.labelOffset.x, place.labelOffset.y], ...automatic] : automatic;
-  const width = Math.max(154, Math.min(330, Math.max(String(place.name || "").length, String(place.nameZh || "").length * 2) * 13));
+  const { width, height } = labelMetrics(place);
   let best;
   for (const [dx, dy] of candidates) {
     const anchor = place.anchor || (dx < 0 ? "end" : "start");
     const x = place.x + dx, y = place.y + dy;
-    const box = { x: anchor === "end" ? x - width : x, y: y - 26, width, height: 58 };
+    const box = { x: anchor === "end" ? x - width : x, y: y - 26, width, height };
     const inCanvas = box.x >= 18 && box.x + box.width <= GOLDEN.width - 18 && box.y >= 18 && box.y + box.height <= GOLDEN.height - 18;
     const collisions = occupied.filter((item) => overlaps(item, box)).length;
     const score = collisions * 10000 + Math.hypot(dx, dy) + (inCanvas ? 0 : 100000);
@@ -437,8 +466,8 @@ function buildRegion(mapData, manifest) {
     const colored = { ...place, ...point, color: GOLDEN.routeColors[((days[0] || 1) - 1) % GOLDEN.routeColors.length] };
     const label = labelFor(colored, index, occupied);
     const primary = place.name || place.nameZh || place.id;
-    const secondary = place.nameZh && place.nameZh !== primary ? place.nameZh : null;
-    return { id: place.id, ...point, color: colored.color, tx: Number(label.x.toFixed(2)), ty: Number(label.y.toFixed(2)), size: 24, anchor: label.anchor, lines: secondary ? [`${primary} /`, secondary] : [primary], query: place.query || `${primary} ${mapData.region.label}`, geo: place.geo, days };
+    const metrics = labelMetrics(place);
+    return { id: place.id, ...point, color: colored.color, tx: Number(label.x.toFixed(2)), ty: Number(label.y.toFixed(2)), size: 24, anchor: label.anchor, lines: metrics.lines, ...(metrics.feature ? { localFeature: metrics.feature } : {}), query: place.query || `${primary} ${mapData.region.label}`, geo: place.geo, days };
   });
   const placeById = new Map(renderedPlaces.map((place) => [place.id, place]));
   const overviewPlaceIds = overviewPlaces(mapData.places, mapData.routes);
