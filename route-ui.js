@@ -23,7 +23,10 @@ function placeOptions(source, placeId) {
   const place = placeLayersFor(source).find((item) => item.id === placeId);
   if (!place) return [[placeId, placeId]];
   if (Array.isArray(place.options) && place.options.length) return place.options.map((option) => [option.label, option.query]);
-  return [[place.lines?.at(-1) || placeId, place.query || place.lines?.[0] || placeId]];
+  const feature = String(place.localFeature || "").trim();
+  const nameLines = (place.lines || []).filter((line) => line && line !== feature);
+  const label = String(nameLines.at(-1) || place.lines?.[0] || placeId).replace(/\s*\/\s*$/, "");
+  return [[label, place.query || nameLines[0] || placeId]];
 }
 
 function scheduleItemsForPin(day, pin) {

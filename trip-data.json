@@ -817,6 +817,10 @@
         "id": "huangguoshu",
         "name": "黄果树",
         "countryCode": "CN",
+        "labelOffset": {
+          "x": -150,
+          "y": -20
+        },
         "days": [
           1
         ],
@@ -824,7 +828,8 @@
           "lat": 25.992,
           "lng": 105.667
         },
-        "query": "黄果树瀑布"
+        "query": "黄果树瀑布",
+        "localFeature": "大瀑布 · 布依蜡染"
       },
       {
         "id": "wanfenglin",
@@ -840,7 +845,8 @@
           "lat": 25.047,
           "lng": 104.963
         },
-        "query": "万峰林 兴义"
+        "query": "万峰林 兴义",
+        "localFeature": "峰林田园 · 布依人家"
       },
       {
         "id": "xingyi-station",
@@ -853,7 +859,8 @@
           "lat": 25.092,
           "lng": 104.905
         },
-        "query": "兴义站"
+        "query": "兴义站",
+        "localFeature": "羊肉粉"
       },
       {
         "id": "chengdu",
@@ -868,7 +875,8 @@
           "lat": 30.6598,
           "lng": 104.0633
         },
-        "query": "成都 维也纳酒店"
+        "query": "成都 维也纳酒店",
+        "localFeature": "火锅 · 川剧变脸"
       },
       {
         "id": "zhenjiangguan",
@@ -881,7 +889,8 @@
           "lat": 32.29,
           "lng": 103.74
         },
-        "query": "镇江关 松潘"
+        "query": "镇江关 松潘",
+        "localFeature": "藏寨 · 岷江峡谷"
       },
       {
         "id": "jiuzhai-hotel",
@@ -909,7 +918,8 @@
           "lat": 33.262,
           "lng": 103.918
         },
-        "query": "九寨沟游客中心"
+        "query": "九寨沟游客中心",
+        "localFeature": "彩池叠瀑 · 藏羌风情"
       },
       {
         "id": "tfu",
@@ -1208,13 +1218,15 @@
             "x": 741.65,
             "y": 739.18,
             "color": "#397dc1",
-            "tx": 709.65,
-            "ty": 707.18,
+            "tx": 591.65,
+            "ty": 719.18,
             "size": 24,
             "anchor": "end",
             "lines": [
-              "黄果树"
+              "黄果树",
+              "大瀑布 · 布依蜡染"
             ],
+            "localFeature": "大瀑布 · 布依蜡染",
             "query": "黄果树瀑布",
             "geo": {
               "lat": 25.992,
@@ -1234,8 +1246,10 @@
             "size": 24,
             "anchor": "start",
             "lines": [
-              "万峰林"
+              "万峰林",
+              "峰林田园 · 布依人家"
             ],
+            "localFeature": "峰林田园 · 布依人家",
             "query": "万峰林 兴义",
             "geo": {
               "lat": 25.047,
@@ -1258,8 +1272,10 @@
             "size": 24,
             "anchor": "end",
             "lines": [
-              "兴义站"
+              "兴义站",
+              "羊肉粉"
             ],
+            "localFeature": "羊肉粉",
             "query": "兴义站",
             "geo": {
               "lat": 25.092,
@@ -1279,8 +1295,10 @@
             "size": 24,
             "anchor": "start",
             "lines": [
-              "成都 · 维也纳酒店"
+              "成都 · 维也纳酒店",
+              "火锅 · 川剧变脸"
             ],
+            "localFeature": "火锅 · 川剧变脸",
             "query": "成都 维也纳酒店",
             "geo": {
               "lat": 30.6598,
@@ -1302,8 +1320,10 @@
             "size": 24,
             "anchor": "start",
             "lines": [
-              "镇江关"
+              "镇江关",
+              "藏寨 · 岷江峡谷"
             ],
+            "localFeature": "藏寨 · 岷江峡谷",
             "query": "镇江关 松潘",
             "geo": {
               "lat": 32.29,
@@ -1346,8 +1366,10 @@
             "size": 24,
             "anchor": "start",
             "lines": [
-              "九寨沟游客中心"
+              "九寨沟游客中心",
+              "彩池叠瀑 · 藏羌风情"
             ],
+            "localFeature": "彩池叠瀑 · 藏羌风情",
             "query": "九寨沟游客中心",
             "geo": {
               "lat": 33.262,
@@ -1404,8 +1426,8 @@
                 "anchor": "start"
               },
               "huangguoshu": {
-                "x": 709.65,
-                "y": 707.18,
+                "x": 591.65,
+                "y": 719.18,
                 "anchor": "end"
               },
               "wanfenglin": {
