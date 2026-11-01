@@ -136,6 +136,9 @@
     }
 
     function persistSnapshot(snapshot) {
+      if (globalThis.tripAccess?.canEdit?.() === false) {
+        throw new Error("READ_ONLY");
+      }
       const normalized = normalizeSnapshot(snapshot);
       memorySnapshot = normalized;
       if (storage) {

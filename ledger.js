@@ -376,6 +376,9 @@
     }
 
     function writeSnapshot(next) {
+      if (globalThis.tripAccess?.canEdit?.() === false) {
+        throw new Error("READ_ONLY");
+      }
       const previous = readSnapshot() || {};
       const snapshot = {
         ...previous,
@@ -1416,6 +1419,10 @@
   }
 
   async function mutateData(mutator, options = {}) {
+    if (globalThis.tripAccess?.canEdit?.() === false) {
+      setNotice("当前是只读，不能修改。");
+      return false;
+    }
     return enqueueMutation(async () => {
       const next = deepClone(ledgerData);
       mutator(next);
@@ -1964,6 +1971,16 @@
   function handleAction(button) {
     const action = button.dataset.ledgerAction;
     if (!action) return;
+    const writes = new Set([
+      "open-members", "open-families", "edit-family", "delete-family", "open-settings",
+      "edit-member", "pick-base-currency", "pick-common-currency", "choose-bill-currency",
+      "choose-currency", "remove-common-currency", "delete-member", "edit-bill",
+      "delete-bill", "edit-bill-note", "select-all-participants"
+    ]);
+    if (writes.has(action) && globalThis.tripAccess?.canEdit?.() === false) {
+      setNotice("当前是只读，不能修改。");
+      return;
+    }
     if (action === "set-tab") {
       captureBillDraft();
       setActiveTab(button.dataset.ledgerTab);
@@ -2074,6 +2091,10 @@
     const form = event.target.closest("form[data-ledger-form]");
     if (!form || !ledgerRoot.contains(form)) return;
     event.preventDefault();
+    if (globalThis.tripAccess?.canEdit?.() === false) {
+      setNotice("当前是只读，不能修改。");
+      return;
+    }
     if (form.dataset.ledgerForm === "bill-note") {
       await submitBillNote(form);
       return;

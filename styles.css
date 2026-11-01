@@ -65,7 +65,43 @@ img { display: block; max-width: 100%; }
 }
 .wordmark { min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; font-weight: 800; letter-spacing: 0.06em; font-size: 12px; }
 .wordmark span { color: var(--muted); font-weight: 600; }
-.topbar nav { display: flex; gap: 2px; }
+.topbar nav { display: flex; align-items: center; gap: 2px; }
+.access-mode {
+  min-height: 26px;
+  margin-right: 6px;
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 760;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.access-mode[data-mode="edit"] { color: #1d6b3c; background: #e4f5ea; }
+.access-mode[data-mode="read"] { color: #8a4b12; background: #f8ead7; }
+html[data-access-mode="read"] .todo-form,
+html[data-access-mode="read"] .todo-delete,
+html[data-access-mode="read"] [data-ledger-form="bill"],
+html[data-access-mode="read"] [data-ledger-form="member-add"],
+html[data-access-mode="read"] [data-ledger-form="member-edit"],
+html[data-access-mode="read"] [data-ledger-form="family-save"],
+html[data-access-mode="read"] [data-ledger-action="open-members"],
+html[data-access-mode="read"] [data-ledger-action="open-families"],
+html[data-access-mode="read"] [data-ledger-action="edit-family"],
+html[data-access-mode="read"] [data-ledger-action="delete-family"],
+html[data-access-mode="read"] [data-ledger-action="open-settings"],
+html[data-access-mode="read"] [data-ledger-action="edit-member"],
+html[data-access-mode="read"] [data-ledger-action="delete-member"],
+html[data-access-mode="read"] [data-ledger-action="edit-bill"],
+html[data-access-mode="read"] [data-ledger-action="delete-bill"],
+html[data-access-mode="read"] [data-ledger-action="edit-bill-note"],
+html[data-access-mode="read"] [data-ledger-action="pick-base-currency"],
+html[data-access-mode="read"] [data-ledger-action="pick-common-currency"],
+html[data-access-mode="read"] [data-ledger-action="remove-common-currency"],
+html[data-access-mode="read"] [data-ledger-action="choose-currency"] { display: none !important; }
+html[data-access-mode="read"] .schedule-ticket__toggle input,
+html[data-access-mode="read"] .todo-item input { pointer-events: none; }
 .topbar nav a {
   min-width: 44px;
   min-height: 44px;

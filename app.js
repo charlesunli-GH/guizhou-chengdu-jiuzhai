@@ -593,6 +593,10 @@ function renderTimeline() {
   $("#timeline").onchange = (event) => {
     const checkbox = event.target.closest(".schedule-ticket input[type='checkbox']");
     if (!checkbox) return;
+    if (globalThis.tripAccess?.canEdit?.() === false) {
+      checkbox.checked = state.purchasedTickets.has(checkbox.value);
+      return;
+    }
     if (checkbox.checked) state.purchasedTickets.add(checkbox.value);
     else state.purchasedTickets.delete(checkbox.value);
     saveTicketState(checkbox.value, checkbox.checked);
@@ -760,7 +764,7 @@ async function loadSharedState() {
   state.todos = Array.isArray(todoSnapshot.todos) ? todoSnapshot.todos : [];
   state.purchasedTickets = new Set((Array.isArray(ticketSnapshot.tickets) ? ticketSnapshot.tickets : []).filter((item) => item.completed).map((item) => item.id));
   const authoredTodos = state.data.preTrip?.todoItems || state.data.preTrip?.packingItems || [];
-  if (todoAdapter?.mode === "local" && !hasLocalTodoSnapshot && !state.todos.length && authoredTodos.length) {
+    if (todoAdapter?.mode === "local" && !hasLocalTodoSnapshot && !state.todos.length && authoredTodos.length && globalThis.tripAccess?.canEdit?.() !== false) {
     state.todos = authoredTodos.map((item, index) => ({
       id: String(item.id || `todo-initial-${index + 1}`),
       text: String(item.text || item.title || "").trim(),
@@ -796,6 +800,7 @@ function renderTravelPrep() {
   renderTodoList();
   $("#todo-form").onsubmit = (event) => {
     event.preventDefault();
+    if (globalThis.tripAccess?.canEdit?.() === false) return;
     const input = $("#todo-input");
     const text = input.value.trim();
     if (!text) return;
@@ -807,6 +812,11 @@ function renderTravelPrep() {
   $("#todo-list").onchange = (event) => {
     const item = event.target.closest("[data-todo-id]");
     if (!item || !event.target.matches("input[type='checkbox']")) return;
+    if (globalThis.tripAccess?.canEdit?.() === false) {
+      const current = state.todos.find((entry) => entry.id === item.dataset.todoId);
+      event.target.checked = Boolean(current?.completed);
+      return;
+    }
     const todo = state.todos.find((entry) => entry.id === item.dataset.todoId);
     todo.completed = event.target.checked;
     saveSharedChange("todos", todo).catch(console.error);
@@ -814,7 +824,7 @@ function renderTravelPrep() {
   };
   $("#todo-list").onclick = (event) => {
     const button = event.target.closest(".todo-delete");
-    if (!button) return;
+    if (!button || globalThis.tripAccess?.canEdit?.() === false) return;
     const item = button.closest("[data-todo-id]");
     state.todos = state.todos.filter((todo) => todo.id !== item.dataset.todoId);
     saveSharedChange("todos", { id: item.dataset.todoId }, "delete").catch(console.error);
