@@ -42,6 +42,7 @@
     "包车前往万峰林，约 2 小时 45 分，19:15 到达": "Chartered bus to Wanfenglin, about 2 hours 45 min, arrive 19:15",
     "入住万峰林酒店。酒店名称待确认。": "Check in at the Wanfenglin hotel. Hotel name to be confirmed.",
     "万峰林白天活动待确认": "Wanfenglin daytime plans to be confirmed",
+    "孩子们做作业": "The children do homework",
     "包车前往兴义车站，约 1 小时。出发时刻待确认。": "Chartered bus to Xingyi station, about 1 hour. Departure time to be confirmed.",
     "火车前往成都。车次与时刻待确认。": "Train to Chengdu. Number and times to be confirmed.",
     "入住维也纳酒店。入住时刻待确认。": "Check in at Vienna Hotel. Check-in time to be confirmed.",
