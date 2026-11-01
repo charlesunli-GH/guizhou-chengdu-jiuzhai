@@ -1,0 +1,1592 @@
+{
+  "$schema": "./schemas/trip-data.schema.json",
+  "schemaVersion": "2.0-lite",
+  "config": {
+    "schemaVersion": "1.0.0",
+    "modules": {
+      "flights": true,
+      "overview": true,
+      "itinerary": true,
+      "todo": true,
+      "driving": true,
+      "ledger": true
+    },
+    "language": "zh-CN",
+    "persistence": {
+      "mode": "local"
+    }
+  },
+  "metadata": {
+    "tripId": "guizhou-chengdu-jiuzhai-202408",
+    "title": "贵阳 + 成都 + 九寨沟",
+    "language": "zh-CN",
+    "timeZone": "Asia/Shanghai",
+    "assets": {
+      "routeMaps": [
+        "assets/maps/templates/template-10-broad-riverland.webp"
+      ]
+    }
+  },
+  "trip": {
+    "status": "draft",
+    "startDate": "2024-08-03",
+    "endDate": "2024-08-09",
+    "dayCount": 7,
+    "nightCountAway": 6,
+    "countries": [
+      {
+        "code": "CN",
+        "name": "China",
+        "nameZh": "中国",
+        "nameEn": "China"
+      }
+    ],
+    "primaryDestinationCountries": [
+      "CN"
+    ],
+    "primaryDestinationName": "贵阳 + 成都 + 九寨沟",
+    "primaryDestinationNameEn": "Guiyang + Chengdu + Jiuzhai",
+    "citiesAndAreas": [
+      "贵阳",
+      "黄果树",
+      "万峰林",
+      "兴义",
+      "成都",
+      "镇江关",
+      "九寨沟"
+    ],
+    "routeSummary": "上海飞贵阳，经黄果树、万峰林，由兴义乘火车到成都，再经镇江关到九寨沟，从成都天府机场返回上海。",
+    "groupSize": 4
+  },
+  "flightJourneys": [
+    {
+      "id": "journey-outbound",
+      "title": "上海 → 贵阳"
+    },
+    {
+      "id": "journey-return",
+      "title": "成都 → 上海"
+    }
+  ],
+  "flights": [
+    {
+      "id": "flight-fm9463",
+      "journeyId": "journey-outbound",
+      "sequence": 1,
+      "airline": {
+        "name": "Shanghai Airlines",
+        "nameZh": "上海航空"
+      },
+      "flightNumber": "FM9463",
+      "departure": {
+        "airportCode": "SHA",
+        "city": "上海",
+        "airportName": "虹桥 T2",
+        "date": "2024-08-03",
+        "time": "06:45",
+        "utcOffset": "+08:00"
+      },
+      "arrival": {
+        "airportCode": "KWE",
+        "city": "贵阳",
+        "airportName": "龙洞堡 T2",
+        "date": "2024-08-03",
+        "time": "09:30",
+        "utcOffset": "+08:00"
+      }
+    },
+    {
+      "id": "flight-cz8198",
+      "journeyId": "journey-return",
+      "sequence": 1,
+      "airline": {
+        "name": "China Southern Airlines",
+        "nameZh": "南方航空"
+      },
+      "flightNumber": "CZ8198",
+      "departure": {
+        "airportCode": "TFU",
+        "city": "成都",
+        "airportName": "天府 T2",
+        "date": "2024-08-09",
+        "time": "19:30",
+        "utcOffset": "+08:00"
+      },
+      "arrival": {
+        "airportCode": "PVG",
+        "city": "上海",
+        "airportName": "浦东 T2",
+        "date": "2024-08-09",
+        "time": "22:30",
+        "utcOffset": "+08:00"
+      }
+    }
+  ],
+  "accommodations": [
+    {
+      "id": "stay-wanfenglin",
+      "area": "万峰林",
+      "name": "待确认",
+      "checkIn": "2024-08-03",
+      "checkOut": "2024-08-06",
+      "nights": 3,
+      "personnel": "小呆",
+      "note": "住宿表未写酒店名。预算表写 Wanfenglin Resident。酒店名称待确认。"
+    },
+    {
+      "id": "stay-chengdu",
+      "area": "成都",
+      "name": "维也纳酒店",
+      "nameEn": "Vienna Hotel",
+      "checkIn": "2024-08-06",
+      "checkOut": "2024-08-07",
+      "nights": 1,
+      "personnel": "小呆"
+    },
+    {
+      "id": "stay-jiuzhai",
+      "area": "九寨沟",
+      "name": "待确认",
+      "checkIn": "2024-08-07",
+      "checkOut": "2024-08-09",
+      "nights": null,
+      "personnel": "小呆",
+      "note": "晚数与酒店名称待确认。住宿表写 total: 3 nites，但只列了 2024-08-07 与 2024-08-08；预算表为 2 晚，名称 Jiuzhai Tiantang Resort。"
+    }
+  ],
+  "groundTransport": {
+    "rentalCar": {
+      "company": "待确认",
+      "rentalPeriodDays": "待确认",
+      "vehicle": {
+        "example": "待确认",
+        "class": "包车巴士"
+      },
+      "unlimitedKilometers": false,
+      "price": {
+        "currency": "CNY",
+        "payAtCounter": 0,
+        "note": "金额待确认。页面上的 0 不是报价。预算表只有分段人均估价。"
+      },
+      "insurance": [
+        "保障内容待确认"
+      ],
+      "pickup": {
+        "date": "2024-08-03",
+        "time": "10:00",
+        "location": "首段包车：龙洞堡机场前往黄果树",
+        "address": "取车地点待确认",
+        "utcOffset": "+08:00"
+      },
+      "dropoff": {
+        "date": "2024-08-09",
+        "time": "待确认",
+        "timeZoneLabel": "北京时间 UTC+8",
+        "vehicleReturnPoint": "还车地点待确认",
+        "deadlineWarning": "租车公司、车型、取还车地点、时间和费用都待确认。资料里是多段 Rented Bus，不是一份完整租车合同。",
+        "recommendedArrivalTime": "待确认",
+        "utcOffset": "+08:00"
+      }
+    },
+    "rentalChecklist": [
+      "租车公司待确认",
+      "车型待确认",
+      "取车地点待确认",
+      "还车地点与时间待确认",
+      "费用待确认。预算表有分段人均估价，未当作实付。"
+    ],
+    "drivingNotes": [
+      "行程中的包车是分段记录：贵阳到黄果树、黄果树到万峰林、万峰林到兴义车站、镇江关到酒店、酒店到九寨沟游客中心及返回、九寨沟酒店到车站。公司与订单待确认。"
+    ],
+    "drivingReferenceLinks": [],
+    "plannedRoadLegs": [
+      {
+        "id": "bus-kwe-hgs",
+        "day": 1,
+        "from": "贵阳龙洞堡机场",
+        "to": "黄果树",
+        "mode": "包车",
+        "time": "10:00",
+        "duration": "02:00"
+      },
+      {
+        "id": "bus-hgs-wfl",
+        "day": 1,
+        "from": "黄果树",
+        "to": "万峰林",
+        "mode": "包车",
+        "time": "16:30",
+        "duration": "02:45"
+      },
+      {
+        "id": "bus-wfl-station",
+        "day": 4,
+        "from": "万峰林",
+        "to": "兴义车站",
+        "mode": "包车",
+        "time": "待确认",
+        "duration": "1 小时"
+      },
+      {
+        "id": "bus-zjg-hotel",
+        "day": 5,
+        "from": "镇江关",
+        "to": "九寨沟酒店",
+        "mode": "包车",
+        "time": "待确认",
+        "duration": "3 小时 13 分"
+      },
+      {
+        "id": "bus-hotel-visitor",
+        "day": 6,
+        "from": "九寨沟酒店",
+        "to": "九寨沟游客中心",
+        "mode": "包车",
+        "time": "待确认"
+      },
+      {
+        "id": "bus-hotel-station",
+        "day": 7,
+        "from": "九寨沟酒店",
+        "to": "车站",
+        "mode": "包车",
+        "time": "待确认",
+        "duration": "3 小时 13 分",
+        "note": "具体车站待确认"
+      }
+    ],
+    "publicTransitAndRail": [
+      {
+        "id": "rail-xingyi-chengdu",
+        "day": 4,
+        "from": "兴义",
+        "to": "成都",
+        "mode": "火车",
+        "trainNumber": "待确认",
+        "time": "待确认"
+      },
+      {
+        "id": "rail-chengdu-zjg",
+        "day": 5,
+        "from": "成都",
+        "to": "九寨沟镇江关",
+        "mode": "火车",
+        "trainNumber": "待确认",
+        "time": "待确认"
+      },
+      {
+        "id": "rail-jiuzhai-chengdu",
+        "day": 7,
+        "from": "九寨沟",
+        "to": "成都",
+        "mode": "火车",
+        "trainNumber": "待确认",
+        "time": "待确认",
+        "note": "出发车站待确认"
+      }
+    ]
+  },
+  "days": [
+    {
+      "id": "day-1",
+      "day": 1,
+      "date": "2024-08-03",
+      "title": "上海 → 贵阳 · 黄果树 · 万峰林",
+      "locations": [
+        "虹桥机场",
+        "贵阳龙洞堡机场",
+        "黄果树",
+        "万峰林"
+      ],
+      "schedule": [
+        {
+          "id": "d1-flight",
+          "time": "06:45",
+          "type": "flight",
+          "text": "上海航空 FM9463，虹桥 T2 → 贵阳龙洞堡 T2，09:30 抵达"
+        },
+        {
+          "id": "d1-bus-hgs",
+          "time": "10:00",
+          "type": "drive",
+          "text": "包车前往黄果树，约 2 小时",
+          "placeIds": [
+            "kwe",
+            "huangguoshu"
+          ]
+        },
+        {
+          "id": "d1-hgs",
+          "time": "12:00",
+          "type": "attraction",
+          "text": "黄果树，至 16:00",
+          "placeId": "huangguoshu",
+          "ticketIds": [
+            "ticket-huangguoshu"
+          ]
+        },
+        {
+          "id": "d1-bus-wfl",
+          "time": "16:30",
+          "type": "drive",
+          "text": "包车前往万峰林，约 2 小时 45 分，19:15 到达",
+          "placeIds": [
+            "huangguoshu",
+            "wanfenglin"
+          ]
+        },
+        {
+          "id": "d1-dinner",
+          "time": "19:30",
+          "type": "restaurant",
+          "text": "酒店用餐，至 20:30",
+          "placeId": "wanfenglin"
+        },
+        {
+          "id": "d1-hotel",
+          "time": "21:00",
+          "type": "check-in",
+          "text": "入住万峰林酒店。酒店名称待确认。",
+          "placeId": "wanfenglin"
+        }
+      ]
+    },
+    {
+      "id": "day-2",
+      "day": 2,
+      "date": "2024-08-04",
+      "title": "万峰林",
+      "locations": [
+        "万峰林"
+      ],
+      "notes": [
+        "白天活动待确认。原表只有酒店早、中、晚餐。"
+      ],
+      "schedule": [
+        {
+          "id": "d2-breakfast",
+          "time": "08:30",
+          "type": "restaurant",
+          "text": "酒店早餐，至 09:30",
+          "placeId": "wanfenglin"
+        },
+        {
+          "id": "d2-day",
+          "time": "待确认",
+          "type": "note",
+          "text": "万峰林白天活动待确认"
+        },
+        {
+          "id": "d2-lunch",
+          "time": "12:00",
+          "type": "restaurant",
+          "text": "酒店午餐，至 13:00",
+          "placeId": "wanfenglin"
+        },
+        {
+          "id": "d2-dinner",
+          "time": "19:00",
+          "type": "restaurant",
+          "text": "酒店晚餐，至 20:00",
+          "placeId": "wanfenglin"
+        }
+      ]
+    },
+    {
+      "id": "day-3",
+      "day": 3,
+      "date": "2024-08-05",
+      "title": "万峰林",
+      "locations": [
+        "万峰林"
+      ],
+      "notes": [
+        "白天活动待确认。原表只有酒店早、中、晚餐。"
+      ],
+      "schedule": [
+        {
+          "id": "d3-breakfast",
+          "time": "08:30",
+          "type": "restaurant",
+          "text": "酒店早餐，至 09:30",
+          "placeId": "wanfenglin"
+        },
+        {
+          "id": "d3-day",
+          "time": "待确认",
+          "type": "note",
+          "text": "万峰林白天活动待确认"
+        },
+        {
+          "id": "d3-lunch",
+          "time": "12:00",
+          "type": "restaurant",
+          "text": "酒店午餐，至 13:00",
+          "placeId": "wanfenglin"
+        },
+        {
+          "id": "d3-dinner",
+          "time": "19:00",
+          "type": "restaurant",
+          "text": "酒店晚餐，至 20:00",
+          "placeId": "wanfenglin"
+        }
+      ]
+    },
+    {
+      "id": "day-4",
+      "day": 4,
+      "date": "2024-08-06",
+      "title": "万峰林 → 成都",
+      "locations": [
+        "万峰林",
+        "兴义站",
+        "成都"
+      ],
+      "notes": [
+        "火车车次与时刻待确认。兴义按原表 Yixing 理解。"
+      ],
+      "schedule": [
+        {
+          "id": "d4-breakfast",
+          "time": "08:30",
+          "type": "restaurant",
+          "text": "酒店早餐，至 09:30",
+          "placeId": "wanfenglin"
+        },
+        {
+          "id": "d4-bus-station",
+          "time": "待确认",
+          "type": "drive",
+          "text": "包车前往兴义车站，约 1 小时。出发时刻待确认。",
+          "placeIds": [
+            "wanfenglin",
+            "xingyi-station"
+          ]
+        },
+        {
+          "id": "d4-train",
+          "time": "待确认",
+          "type": "train",
+          "text": "火车前往成都。车次与时刻待确认。",
+          "placeIds": [
+            "xingyi-station",
+            "chengdu"
+          ]
+        },
+        {
+          "id": "d4-walk",
+          "time": "待确认",
+          "type": "walk",
+          "text": "步行前往酒店",
+          "placeId": "chengdu"
+        },
+        {
+          "id": "d4-hotel",
+          "time": "待确认",
+          "type": "check-in",
+          "text": "入住维也纳酒店。入住时刻待确认。",
+          "placeId": "chengdu"
+        }
+      ]
+    },
+    {
+      "id": "day-5",
+      "day": 5,
+      "date": "2024-08-07",
+      "title": "成都 → 九寨沟",
+      "locations": [
+        "成都",
+        "镇江关",
+        "九寨沟"
+      ],
+      "notes": [
+        "火车车次与时刻待确认。九寨沟酒店名称待确认。"
+      ],
+      "schedule": [
+        {
+          "id": "d5-train",
+          "time": "待确认",
+          "type": "train",
+          "text": "火车前往九寨沟镇江关。车次与时刻待确认。",
+          "placeIds": [
+            "chengdu",
+            "zhenjiangguan"
+          ]
+        },
+        {
+          "id": "d5-bus-hotel",
+          "time": "待确认",
+          "type": "drive",
+          "text": "包车前往酒店，约 3 小时 13 分。出发时刻待确认。",
+          "placeIds": [
+            "zhenjiangguan",
+            "jiuzhai-hotel"
+          ]
+        },
+        {
+          "id": "d5-hotel",
+          "time": "待确认",
+          "type": "check-in",
+          "text": "入住九寨沟酒店。酒店名称、晚数与时刻待确认。",
+          "placeId": "jiuzhai-hotel"
+        }
+      ]
+    },
+    {
+      "id": "day-6",
+      "day": 6,
+      "date": "2024-08-08",
+      "title": "九寨沟",
+      "locations": [
+        "九寨沟"
+      ],
+      "notes": [
+        "进出沟时刻待确认。门票待确认。"
+      ],
+      "schedule": [
+        {
+          "id": "d6-bus-in",
+          "time": "待确认",
+          "type": "drive",
+          "text": "包车前往游客中心。时刻待确认。",
+          "placeIds": [
+            "jiuzhai-hotel",
+            "jiuzhai-visitor"
+          ]
+        },
+        {
+          "id": "d6-safari",
+          "time": "待确认",
+          "type": "attraction",
+          "text": "九寨沟游览。具体路线与时刻待确认。",
+          "placeId": "jiuzhai-visitor",
+          "ticketIds": [
+            "ticket-jiuzhai"
+          ]
+        },
+        {
+          "id": "d6-bus-back",
+          "time": "待确认",
+          "type": "drive",
+          "text": "包车返回酒店。时刻待确认。",
+          "placeIds": [
+            "jiuzhai-visitor",
+            "jiuzhai-hotel"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "day-7",
+      "day": 7,
+      "date": "2024-08-09",
+      "title": "九寨沟 → 成都 → 上海",
+      "locations": [
+        "九寨沟",
+        "成都",
+        "天府机场",
+        "浦东机场"
+      ],
+      "notes": [
+        "离开九寨沟的车站、车次和时刻待确认。"
+      ],
+      "schedule": [
+        {
+          "id": "d7-bus",
+          "time": "待确认",
+          "type": "drive",
+          "text": "包车前往车站，约 3 小时 13 分。车站与时刻待确认。",
+          "placeId": "jiuzhai-hotel"
+        },
+        {
+          "id": "d7-train",
+          "time": "待确认",
+          "type": "train",
+          "text": "火车返回成都。车次、时刻与到达车站待确认。",
+          "placeIds": [
+            "jiuzhai-hotel",
+            "chengdu"
+          ]
+        },
+        {
+          "id": "d7-taxi",
+          "time": "待确认",
+          "type": "transfer",
+          "text": "出租车前往天府机场。时刻待确认。",
+          "placeIds": [
+            "chengdu",
+            "tfu"
+          ]
+        },
+        {
+          "id": "d7-flight",
+          "time": "19:30",
+          "type": "flight",
+          "text": "南方航空 CZ8198，天府 T2 → 浦东 T2，22:30 抵达"
+        }
+      ]
+    }
+  ],
+  "places": [
+    {
+      "id": "kwe",
+      "name": "贵阳龙洞堡机场",
+      "nameZh": "贵阳龙洞堡机场",
+      "cityOrArea": "贵阳"
+    },
+    {
+      "id": "huangguoshu",
+      "name": "黄果树",
+      "nameZh": "黄果树",
+      "cityOrArea": "安顺"
+    },
+    {
+      "id": "wanfenglin",
+      "name": "万峰林",
+      "nameZh": "万峰林",
+      "cityOrArea": "兴义"
+    },
+    {
+      "id": "xingyi-station",
+      "name": "兴义站",
+      "nameZh": "兴义站",
+      "cityOrArea": "兴义"
+    },
+    {
+      "id": "chengdu",
+      "name": "成都 · 维也纳酒店",
+      "nameZh": "成都 · 维也纳酒店",
+      "cityOrArea": "成都"
+    },
+    {
+      "id": "zhenjiangguan",
+      "name": "镇江关",
+      "nameZh": "镇江关",
+      "cityOrArea": "九寨沟"
+    },
+    {
+      "id": "jiuzhai-hotel",
+      "name": "九寨沟住宿",
+      "nameZh": "九寨沟住宿",
+      "cityOrArea": "九寨沟"
+    },
+    {
+      "id": "jiuzhai-visitor",
+      "name": "九寨沟游客中心",
+      "nameZh": "九寨沟游客中心",
+      "cityOrArea": "九寨沟"
+    },
+    {
+      "id": "tfu",
+      "name": "成都天府机场",
+      "nameZh": "成都天府机场",
+      "cityOrArea": "成都"
+    }
+  ],
+  "restaurants": [],
+  "bookingsAndTickets": [],
+  "ticketPlanning": {
+    "statusStorage": "local",
+    "statusStorageNote": "门票状态默认只保存在当前浏览器。",
+    "items": [
+      {
+        "id": "ticket-huangguoshu",
+        "day": 1,
+        "dayId": "day-1",
+        "name": "黄果树门票",
+        "requirement": "needs-confirmation",
+        "guidance": [
+          "票种、订单和 PDF 待确认"
+        ],
+        "scheduleItemIds": [
+          "d1-hgs"
+        ]
+      },
+      {
+        "id": "ticket-jiuzhai",
+        "day": 6,
+        "dayId": "day-6",
+        "name": "九寨沟门票",
+        "requirement": "needs-confirmation",
+        "guidance": [
+          "票种、订单和 PDF 待确认"
+        ],
+        "scheduleItemIds": [
+          "d6-safari"
+        ]
+      }
+    ]
+  },
+  "preTrip": {
+    "packingItems": [
+      {
+        "id": "todo-equipment",
+        "text": "行李与装备清单待确认。原表混有其他行程物品，未整表导入。",
+        "completed": false
+      }
+    ],
+    "preparationsExplicitlyMentioned": [],
+    "missingNote": "装备表与其他行程物品混在一起，待确认后再导入。"
+  },
+  "mapLinks": {
+    "providedGoogleMapsLinks": [],
+    "note": "",
+    "cityLevelNavigationDisabled": false,
+    "navigationPolicy": {
+      "noNavigationTypes": [
+        "flight",
+        "note",
+        "rest"
+      ],
+      "selfNavigationTypes": [
+        "drive",
+        "return",
+        "transfer",
+        "check-in",
+        "check-out",
+        "restaurant",
+        "attraction",
+        "walk",
+        "hike"
+      ]
+    },
+    "navigationPlaces": []
+  },
+  "issuesAndUncertainties": [
+    {
+      "id": "gap-wanfenglin-days",
+      "text": "8 月 4 日、8 月 5 日万峰林白天活动待确认。"
+    },
+    {
+      "id": "gap-trains",
+      "text": "兴义到成都、成都到镇江关、九寨沟到成都的车次和时刻待确认。"
+    },
+    {
+      "id": "gap-hotels",
+      "text": "万峰林与九寨沟酒店名称待确认。九寨沟晚数在住宿表和预算表之间不一致，待确认。"
+    },
+    {
+      "id": "gap-rental",
+      "text": "包车公司、车型、取还车地点和费用待确认。"
+    },
+    {
+      "id": "gap-tickets",
+      "text": "黄果树、九寨沟门票待确认。"
+    },
+    {
+      "id": "gap-ledger",
+      "text": "记账待确认。预算表有总预算，实际栏主要只有机票 7900 元，没有逐笔付款和分账。"
+    },
+    {
+      "id": "gap-todo",
+      "text": "装备清单待确认，未整表导入。"
+    }
+  ],
+  "map": {
+    "schemaVersion": "1.0-lite",
+    "mapMode": "template-auto",
+    "templateId": "auto",
+    "disclaimer": "本图仅表达地点的相对方位与路线顺序，不代表真实比例或精确地理边界。",
+    "region": {
+      "id": "guizhou-sichuan",
+      "label": "贵阳 + 成都 + 九寨沟",
+      "countryCode": "CN",
+      "countryCodes": [
+        "CN"
+      ],
+      "heading": "GUIYANG CHENGDU JIUZHAI / 贵阳 · 成都 · 九寨沟",
+      "title": "贵阳 + 成都 + 九寨沟 · 旅行路线",
+      "description": "贵阳、成都、九寨沟行程示意图"
+    },
+    "places": [
+      {
+        "id": "kwe",
+        "name": "贵阳龙洞堡机场",
+        "countryCode": "CN",
+        "days": [
+          1
+        ],
+        "geo": {
+          "lat": 26.5385,
+          "lng": 106.8007
+        },
+        "query": "贵阳龙洞堡国际机场"
+      },
+      {
+        "id": "huangguoshu",
+        "name": "黄果树",
+        "countryCode": "CN",
+        "days": [
+          1
+        ],
+        "geo": {
+          "lat": 25.992,
+          "lng": 105.667
+        },
+        "query": "黄果树瀑布"
+      },
+      {
+        "id": "wanfenglin",
+        "name": "万峰林",
+        "countryCode": "CN",
+        "days": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "geo": {
+          "lat": 25.047,
+          "lng": 104.963
+        },
+        "query": "万峰林 兴义"
+      },
+      {
+        "id": "xingyi-station",
+        "name": "兴义站",
+        "countryCode": "CN",
+        "days": [
+          4
+        ],
+        "geo": {
+          "lat": 25.092,
+          "lng": 104.905
+        },
+        "query": "兴义站"
+      },
+      {
+        "id": "chengdu",
+        "name": "成都 · 维也纳酒店",
+        "countryCode": "CN",
+        "days": [
+          4,
+          5,
+          7
+        ],
+        "geo": {
+          "lat": 30.6598,
+          "lng": 104.0633
+        },
+        "query": "成都 维也纳酒店"
+      },
+      {
+        "id": "zhenjiangguan",
+        "name": "镇江关",
+        "countryCode": "CN",
+        "days": [
+          5
+        ],
+        "geo": {
+          "lat": 32.29,
+          "lng": 103.74
+        },
+        "query": "镇江关 松潘"
+      },
+      {
+        "id": "jiuzhai-hotel",
+        "name": "九寨沟住宿",
+        "countryCode": "CN",
+        "days": [
+          5,
+          6,
+          7
+        ],
+        "geo": {
+          "lat": 33.24,
+          "lng": 103.905
+        },
+        "query": "九寨沟 漳扎镇"
+      },
+      {
+        "id": "jiuzhai-visitor",
+        "name": "九寨沟游客中心",
+        "countryCode": "CN",
+        "days": [
+          6
+        ],
+        "geo": {
+          "lat": 33.262,
+          "lng": 103.918
+        },
+        "query": "九寨沟游客中心"
+      },
+      {
+        "id": "tfu",
+        "name": "成都天府机场",
+        "countryCode": "CN",
+        "days": [
+          7
+        ],
+        "geo": {
+          "lat": 30.3086,
+          "lng": 104.4419
+        },
+        "query": "成都天府国际机场"
+      }
+    ],
+    "routes": [
+      {
+        "day": 1,
+        "placeIds": [
+          "kwe",
+          "huangguoshu",
+          "wanfenglin"
+        ]
+      },
+      {
+        "day": 4,
+        "placeIds": [
+          "wanfenglin",
+          "xingyi-station",
+          "chengdu"
+        ]
+      },
+      {
+        "day": 5,
+        "placeIds": [
+          "chengdu",
+          "zhenjiangguan",
+          "jiuzhai-hotel"
+        ]
+      },
+      {
+        "day": 6,
+        "placeIds": [
+          "jiuzhai-hotel",
+          "jiuzhai-visitor",
+          "jiuzhai-hotel"
+        ]
+      },
+      {
+        "day": 7,
+        "placeIds": [
+          "jiuzhai-hotel",
+          "chengdu",
+          "tfu"
+        ]
+      }
+    ],
+    "dailyRoutes": [
+      {
+        "day": 1,
+        "placeIds": [
+          "kwe",
+          "huangguoshu",
+          "wanfenglin"
+        ],
+        "scheduleItems": [
+          [
+            "d1-bus-hgs"
+          ],
+          [
+            "d1-bus-wfl"
+          ]
+        ]
+      },
+      {
+        "day": 4,
+        "placeIds": [
+          "wanfenglin",
+          "xingyi-station",
+          "chengdu"
+        ],
+        "scheduleItems": [
+          [
+            "d4-bus-station"
+          ],
+          [
+            "d4-train"
+          ]
+        ]
+      },
+      {
+        "day": 5,
+        "placeIds": [
+          "chengdu",
+          "zhenjiangguan",
+          "jiuzhai-hotel"
+        ],
+        "scheduleItems": [
+          [
+            "d5-train"
+          ],
+          [
+            "d5-bus-hotel"
+          ]
+        ]
+      },
+      {
+        "day": 6,
+        "placeIds": [
+          "jiuzhai-hotel",
+          "jiuzhai-visitor",
+          "jiuzhai-hotel"
+        ],
+        "scheduleItems": [
+          [
+            "d6-bus-in"
+          ],
+          [
+            "d6-bus-back"
+          ]
+        ]
+      },
+      {
+        "day": 7,
+        "placeIds": [
+          "jiuzhai-hotel",
+          "chengdu",
+          "tfu"
+        ],
+        "scheduleItems": [
+          [
+            "d7-train"
+          ],
+          [
+            "d7-taxi"
+          ]
+        ]
+      }
+    ]
+  },
+  "routeMap": {
+    "defaultRegionId": "guizhou-sichuan",
+    "regions": [
+      {
+        "id": "guizhou-sichuan",
+        "label": "贵阳 + 成都 + 九寨沟",
+        "countryCode": "CN",
+        "scope": "template-schematic",
+        "mapMode": "frozen-template",
+        "templateId": "broad-riverland",
+        "mapModeReason": "separated-clusters-or-long-jump",
+        "mapModeMetrics": {
+          "placeCount": 9,
+          "geoPlaceCount": 9,
+          "widthKm": 296.68,
+          "heightKm": 911.87,
+          "spanKm": 919.07,
+          "averageNearestKm": 54.28,
+          "components": 1,
+          "largestLegKm": 624.61,
+          "jumpRatio": 4.93
+        },
+        "days": [
+          1,
+          4,
+          5,
+          6,
+          7
+        ],
+        "canvas": {
+          "width": 1448,
+          "height": 1086
+        },
+        "projection": {
+          "type": "relative-schematic",
+          "bounds": null
+        },
+        "baseImage": "assets/maps/templates/template-10-broad-riverland.webp",
+        "title": "贵阳 + 成都 + 九寨沟 · 旅行路线",
+        "ariaLabel": "贵阳 + 成都 + 九寨沟模板化旅行路线示意图，共5天",
+        "description": "贵阳、成都、九寨沟行程示意图",
+        "disclaimer": "本图仅表达地点的相对方位与路线顺序，不代表真实比例或精确地理边界。",
+        "heading": {
+          "text": "GUIYANG CHENGDU JIUZHAI / 贵阳 · 成都 · 九寨沟",
+          "x": 33,
+          "y": 105,
+          "size": 40
+        },
+        "legend": {
+          "x": 35,
+          "y": 168,
+          "gap": 43
+        },
+        "annotations": [],
+        "routes": [
+          {
+            "day": 1,
+            "color": "#397dc1",
+            "placeIds": [
+              "kwe",
+              "huangguoshu",
+              "wanfenglin"
+            ],
+            "paths": [
+              "M834.03 701.67 C806.4 723.7 775.0 736.4 741.65 739.18 C725.9 774.6 720.9 811.5 727.14 847.67"
+            ],
+            "overviewPaths": [
+              "M834.03 701.67 C806.4 723.7 775.0 736.4 741.65 739.18 C725.9 774.6 720.9 811.5 727.14 847.67"
+            ]
+          },
+          {
+            "day": 4,
+            "color": "#209aaa",
+            "placeIds": [
+              "wanfenglin",
+              "xingyi-station",
+              "chengdu"
+            ],
+            "paths": [
+              "M727.14 847.67 C707.8 819.3 682.3 798.5 652.17 786.4 C610.1 665.9 597.9 542.3 616.25 423.16"
+            ],
+            "overviewPaths": [
+              "M727.14 847.67 C707.8 819.3 682.3 798.5 652.17 786.4 C610.1 665.9 597.9 542.3 616.25 423.16"
+            ]
+          },
+          {
+            "day": 5,
+            "color": "#8865a5",
+            "placeIds": [
+              "chengdu",
+              "zhenjiangguan",
+              "jiuzhai-hotel"
+            ],
+            "paths": [
+              "M616.25 423.16 C602.6 390.1 599.0 355.9 605.7 322.68 C618.2 285.4 619.7 247.7 609.96 211.73"
+            ],
+            "overviewPaths": [
+              "M616.25 423.16 C602.6 390.1 599.0 355.9 605.7 322.68 C618.2 285.4 619.7 247.7 609.96 211.73"
+            ]
+          },
+          {
+            "day": 6,
+            "color": "#df6185",
+            "placeIds": [
+              "jiuzhai-hotel",
+              "jiuzhai-visitor",
+              "jiuzhai-hotel"
+            ],
+            "paths": [
+              "M609.96 211.73 C631.2 238.5 658.1 257.5 688.87 267.38 C656.5 256.4 629.6 237.4 609.96 211.73"
+            ],
+            "overviewPaths": [
+              "M609.96 211.73 C631.2 238.5 658.1 257.5 688.87 267.38 C656.5 256.4 629.6 237.4 609.96 211.73"
+            ]
+          },
+          {
+            "day": 7,
+            "color": "#397dc1",
+            "placeIds": [
+              "jiuzhai-hotel",
+              "chengdu",
+              "tfu"
+            ],
+            "paths": [
+              "M609.96 211.73 C633.2 283.0 635.4 354.9 616.25 423.16 C641.4 447.2 671.1 462.5 703.55 468.24"
+            ],
+            "overviewPaths": [
+              "M609.96 211.73 C633.2 283.0 635.4 354.9 616.25 423.16 C641.4 447.2 671.1 462.5 703.55 468.24"
+            ]
+          }
+        ],
+        "places": [
+          {
+            "id": "kwe",
+            "x": 834.03,
+            "y": 701.67,
+            "color": "#397dc1",
+            "tx": 866.03,
+            "ty": 669.67,
+            "size": 24,
+            "anchor": "start",
+            "lines": [
+              "贵阳龙洞堡机场"
+            ],
+            "query": "贵阳龙洞堡国际机场",
+            "geo": {
+              "lat": 26.5385,
+              "lng": 106.8007
+            },
+            "days": [
+              1
+            ]
+          },
+          {
+            "id": "huangguoshu",
+            "x": 741.65,
+            "y": 739.18,
+            "color": "#397dc1",
+            "tx": 709.65,
+            "ty": 707.18,
+            "size": 24,
+            "anchor": "end",
+            "lines": [
+              "黄果树"
+            ],
+            "query": "黄果树瀑布",
+            "geo": {
+              "lat": 25.992,
+              "lng": 105.667
+            },
+            "days": [
+              1
+            ]
+          },
+          {
+            "id": "wanfenglin",
+            "x": 727.14,
+            "y": 847.67,
+            "color": "#397dc1",
+            "tx": 805.14,
+            "ty": 785.67,
+            "size": 24,
+            "anchor": "start",
+            "lines": [
+              "万峰林"
+            ],
+            "query": "万峰林 兴义",
+            "geo": {
+              "lat": 25.047,
+              "lng": 104.963
+            },
+            "days": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "id": "xingyi-station",
+            "x": 652.17,
+            "y": 786.4,
+            "color": "#209aaa",
+            "tx": 574.17,
+            "ty": 862.4,
+            "size": 24,
+            "anchor": "end",
+            "lines": [
+              "兴义站"
+            ],
+            "query": "兴义站",
+            "geo": {
+              "lat": 25.092,
+              "lng": 104.905
+            },
+            "days": [
+              4
+            ]
+          },
+          {
+            "id": "chengdu",
+            "x": 616.25,
+            "y": 423.16,
+            "color": "#209aaa",
+            "tx": 754.25,
+            "ty": 335.16,
+            "size": 24,
+            "anchor": "start",
+            "lines": [
+              "成都 · 维也纳酒店"
+            ],
+            "query": "成都 维也纳酒店",
+            "geo": {
+              "lat": 30.6598,
+              "lng": 104.0633
+            },
+            "days": [
+              4,
+              5,
+              7
+            ]
+          },
+          {
+            "id": "zhenjiangguan",
+            "x": 605.7,
+            "y": 322.68,
+            "color": "#8865a5",
+            "tx": 743.7,
+            "ty": 424.68,
+            "size": 24,
+            "anchor": "start",
+            "lines": [
+              "镇江关"
+            ],
+            "query": "镇江关 松潘",
+            "geo": {
+              "lat": 32.29,
+              "lng": 103.74
+            },
+            "days": [
+              5
+            ]
+          },
+          {
+            "id": "jiuzhai-hotel",
+            "x": 609.96,
+            "y": 211.73,
+            "color": "#8865a5",
+            "tx": 641.96,
+            "ty": 179.73,
+            "size": 24,
+            "anchor": "start",
+            "lines": [
+              "九寨沟住宿"
+            ],
+            "query": "九寨沟 漳扎镇",
+            "geo": {
+              "lat": 33.24,
+              "lng": 103.905
+            },
+            "days": [
+              5,
+              6,
+              7
+            ]
+          },
+          {
+            "id": "jiuzhai-visitor",
+            "x": 688.87,
+            "y": 267.38,
+            "color": "#df6185",
+            "tx": 826.87,
+            "ty": 179.38,
+            "size": 24,
+            "anchor": "start",
+            "lines": [
+              "九寨沟游客中心"
+            ],
+            "query": "九寨沟游客中心",
+            "geo": {
+              "lat": 33.262,
+              "lng": 103.918
+            },
+            "days": [
+              6
+            ]
+          },
+          {
+            "id": "tfu",
+            "x": 703.55,
+            "y": 468.24,
+            "color": "#397dc1",
+            "tx": 781.55,
+            "ty": 544.24,
+            "size": 24,
+            "anchor": "start",
+            "lines": [
+              "成都天府机场"
+            ],
+            "query": "成都天府国际机场",
+            "geo": {
+              "lat": 30.3086,
+              "lng": 104.4419
+            },
+            "days": [
+              7
+            ]
+          }
+        ],
+        "overviewPlaceIds": [
+          "kwe",
+          "huangguoshu",
+          "wanfenglin",
+          "xingyi-station",
+          "chengdu",
+          "zhenjiangguan",
+          "jiuzhai-hotel",
+          "jiuzhai-visitor",
+          "tfu"
+        ],
+        "dailyLayouts": {
+          "1": {
+            "places": [
+              "kwe",
+              "huangguoshu",
+              "wanfenglin"
+            ],
+            "labels": {
+              "kwe": {
+                "x": 866.03,
+                "y": 669.67,
+                "anchor": "start"
+              },
+              "huangguoshu": {
+                "x": 709.65,
+                "y": 707.18,
+                "anchor": "end"
+              },
+              "wanfenglin": {
+                "x": 805.14,
+                "y": 785.67,
+                "anchor": "start"
+              }
+            },
+            "transport": [
+              {
+                "items": [
+                  "d1-bus-hgs"
+                ],
+                "x": 787.84,
+                "y": 720.42
+              },
+              {
+                "items": [
+                  "d1-bus-wfl"
+                ],
+                "x": 734.39,
+                "y": 793.42
+              }
+            ]
+          },
+          "4": {
+            "places": [
+              "wanfenglin",
+              "xingyi-station",
+              "chengdu"
+            ],
+            "labels": {
+              "wanfenglin": {
+                "x": 805.14,
+                "y": 785.67,
+                "anchor": "start"
+              },
+              "xingyi-station": {
+                "x": 574.17,
+                "y": 862.4,
+                "anchor": "end"
+              },
+              "chengdu": {
+                "x": 754.25,
+                "y": 335.16,
+                "anchor": "start"
+              }
+            },
+            "transport": [
+              {
+                "items": [
+                  "d4-bus-station"
+                ],
+                "x": 689.65,
+                "y": 817.03
+              },
+              {
+                "items": [
+                  "d4-train"
+                ],
+                "x": 634.21,
+                "y": 604.78
+              }
+            ]
+          },
+          "5": {
+            "places": [
+              "chengdu",
+              "zhenjiangguan",
+              "jiuzhai-hotel"
+            ],
+            "labels": {
+              "chengdu": {
+                "x": 754.25,
+                "y": 335.16,
+                "anchor": "start"
+              },
+              "zhenjiangguan": {
+                "x": 743.7,
+                "y": 424.68,
+                "anchor": "start"
+              },
+              "jiuzhai-hotel": {
+                "x": 641.96,
+                "y": 179.73,
+                "anchor": "start"
+              }
+            },
+            "transport": [
+              {
+                "items": [
+                  "d5-train"
+                ],
+                "x": 610.98,
+                "y": 372.92
+              },
+              {
+                "items": [
+                  "d5-bus-hotel"
+                ],
+                "x": 607.83,
+                "y": 267.2
+              }
+            ]
+          },
+          "6": {
+            "places": [
+              "jiuzhai-hotel",
+              "jiuzhai-visitor"
+            ],
+            "labels": {
+              "jiuzhai-hotel": {
+                "x": 641.96,
+                "y": 179.73,
+                "anchor": "start"
+              },
+              "jiuzhai-visitor": {
+                "x": 826.87,
+                "y": 179.38,
+                "anchor": "start"
+              }
+            },
+            "transport": [
+              {
+                "items": [
+                  "d6-bus-in"
+                ],
+                "x": 649.41,
+                "y": 239.56
+              },
+              {
+                "items": [
+                  "d6-bus-back"
+                ],
+                "x": 649.41,
+                "y": 239.56
+              }
+            ]
+          },
+          "7": {
+            "places": [
+              "jiuzhai-hotel",
+              "chengdu",
+              "tfu"
+            ],
+            "labels": {
+              "jiuzhai-hotel": {
+                "x": 641.96,
+                "y": 179.73,
+                "anchor": "start"
+              },
+              "chengdu": {
+                "x": 754.25,
+                "y": 335.16,
+                "anchor": "start"
+              },
+              "tfu": {
+                "x": 781.55,
+                "y": 544.24,
+                "anchor": "start"
+              }
+            },
+            "transport": [
+              {
+                "items": [
+                  "d7-train"
+                ],
+                "x": 613.11,
+                "y": 317.44
+              },
+              {
+                "items": [
+                  "d7-taxi"
+                ],
+                "x": 659.9,
+                "y": 445.7
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}
