@@ -85,15 +85,34 @@ export function stampAccessMode(html, mode) {
   return html.replace("<head>", `<head>\n  ${meta}`);
 }
 
-function loginPage(nextPath, rejected) {
-  const message = rejected ? "密码不正确，请再试一次。" : "可编辑密码可以修改内容，只读密码只能查看。进入后页面会显示当前状态。";
+function loginPage(nextPath, options = {}) {
+  const selectedMode = options.selectedMode === "edit" || options.selectedMode === "read" ? options.selectedMode : "";
+  const rejected = Boolean(options.rejected);
+  const label = selectedMode === "edit" ? "可编辑" : "只读";
+  const message = rejected
+    ? `密码不正确，请输入${label}密码。`
+    : selectedMode
+      ? `请输入${label}密码。验证通过后进入${label}页面。`
+      : "先选择只读或可编辑，再输入对应的密码。";
+  const chooseAgain = `/__switch?next=${encodeURIComponent(nextPath)}`;
+  const passwordStep = selectedMode ? `
+    <input type="hidden" name="mode" value="${selectedMode}">
+    <p class="${rejected ? "error" : ""}">${message}</p>
+    <label>${label}密码<input type="password" name="password" autocomplete="current-password" required autofocus></label>
+    <button type="submit">进入${label}</button>
+    <a class="back-link" href="${escapeHtml(chooseAgain)}">重新选择</a>` : `
+    <p>${message}</p>
+    <div class="mode-choices">
+      <button class="mode-choice mode-choice-read" type="submit" name="mode" value="read">只读</button>
+      <button class="mode-choice mode-choice-edit" type="submit" name="mode" value="edit">可编辑</button>
+    </div>`;
   return `<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex">
-  <title>请输入密码</title>
+  <title>${selectedMode ? `输入${label}密码` : "选择进入方式"}</title>
   <style>
     :root { color-scheme: light; }
     * { box-sizing: border-box; }
@@ -114,20 +133,23 @@ function loginPage(nextPath, rejected) {
       width: 100%; min-height: 48px; padding: 0 14px; border: 1px solid #d5e0e2; border-radius: 12px;
       color: inherit; background: #fff; font: inherit;
     }
-    button {
-      min-height: 48px; border: 0; border-radius: 12px; color: #fff; background: #287b90;
-      font: inherit; font-weight: 750; cursor: pointer;
+    button, .mode-choice {
+      min-height: 48px; border: 0; border-radius: 12px; color: #fff; cursor: pointer;
+      font: inherit; font-weight: 750;
     }
+    .mode-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .mode-choice-read { color: #8a4b12; background: #f8ead7; }
+    .mode-choice-edit { color: #1d6b3c; background: #e4f5ea; }
+    button[type="submit"] { background: #287b90; }
+    .back-link { justify-self: start; color: #607174; font-size: 13px; font-weight: 700; }
     .error { color: #9a3d32; }
   </style>
 </head>
 <body>
   <form method="post" action="/__unlock">
-    <h1>请输入密码</h1>
-    <p class="${rejected ? "error" : ""}">${message}</p>
+    <h1>${selectedMode ? `进入${label}` : "选择进入方式"}</h1>
     <input type="hidden" name="next" value="${escapeHtml(nextPath)}">
-    <label>密码<input type="password" name="password" autocomplete="current-password" required autofocus></label>
-    <button type="submit">进入</button>
+    ${passwordStep}
   </form>
   <script>
     const next = document.querySelector('[name="next"]');
@@ -162,10 +184,8 @@ async function accessHashes(editPassword = "") {
   };
 }
 
-async function modeForPassword(given, editHash, readHash) {
-  if (await passwordMatches(given, editHash)) return "edit";
-  if (await passwordMatches(given, readHash)) return "read";
-  return "";
+function selectedMode(value) {
+  return value === "edit" || value === "read" ? value : "";
 }
 
 function accessCookie(mode, token, secure) {
@@ -177,27 +197,35 @@ export async function authorize(request, editPassword = "") {
   const { editHash, readHash } = await accessHashes(editPassword);
   if (!editHash || !readHash) return page("站点密码尚未配置。", 503);
 
+  if ((request.method === "GET" || request.method === "HEAD") && url.pathname === "/__switch") {
+    const nextPath = safeNext(url.searchParams.get("next") || "/");
+    return page(loginPage(nextPath, { selectedMode: selectedMode(url.searchParams.get("mode")) }), 200);
+  }
+
   if (request.method === "POST" && url.pathname === "/__unlock") {
     const form = await request.formData();
     const nextPath = safeNext(form.get("next"));
-    const mode = await modeForPassword(String(form.get("password") || ""), editHash, readHash);
-    if (mode) {
-      const token = await accessToken(mode === "edit" ? editHash : readHash, mode);
+    const requestedMode = selectedMode(String(form.get("mode") || ""));
+    const given = String(form.get("password") || "");
+    if (!requestedMode || !given) return page(loginPage(nextPath, { selectedMode: requestedMode }), 200);
+    const expectedHash = requestedMode === "edit" ? editHash : readHash;
+    if (await passwordMatches(given, expectedHash)) {
+      const token = await accessToken(expectedHash, requestedMode);
       return new Response(null, {
         status: 303,
         headers: {
           location: nextPath,
           "cache-control": "no-store",
-          "set-cookie": accessCookie(mode, token, url.protocol === "https:")
+          "set-cookie": accessCookie(requestedMode, token, url.protocol === "https:")
         }
       });
     }
-    return page(loginPage(nextPath, true), 401);
+    return page(loginPage(nextPath, { selectedMode: requestedMode, rejected: true }), 401);
   }
 
   const mode = await resolveAccessMode(request.headers.get("cookie"), editHash, readHash);
   if (mode) return { mode };
   if (request.method !== "GET" && request.method !== "HEAD") return page("需要密码", 401);
-  if (wantsDocument(request, url)) return page(loginPage(safeNext(`${url.pathname}${url.search}`), false), 200);
+  if (wantsDocument(request, url)) return page(loginPage(safeNext(`${url.pathname}${url.search}`)), 200);
   return page("需要密码", 401);
 }

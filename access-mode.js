@@ -10,11 +10,16 @@
 
   function applyBadge() {
     document.documentElement.dataset.accessMode = mode;
-    const badge = document.querySelector("#access-mode");
-    if (!badge) return;
-    badge.hidden = false;
-    badge.dataset.mode = mode;
-    badge.textContent = mode === "read" ? "只读" : "可编辑";
+    const choices = document.querySelectorAll("#access-switch .access-choice");
+    const next = `${location.pathname}${location.search}${location.hash}`;
+    choices.forEach((choice) => {
+      const selected = choice.dataset.mode === mode;
+      choice.classList.toggle("is-current", selected);
+      choice.setAttribute("aria-current", selected ? "page" : "false");
+      const target = `/__switch?mode=${encodeURIComponent(choice.dataset.mode)}&next=${encodeURIComponent(next)}`;
+      choice.href = target;
+      choice.title = selected ? `当前是${choice.textContent}` : `输入密码后进入${choice.textContent}`;
+    });
   }
 
   globalThis.tripAccess = { mode, canEdit, applyBadge };

@@ -66,20 +66,24 @@ img { display: block; max-width: 100%; }
 .wordmark { min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; font-weight: 800; letter-spacing: 0.06em; font-size: 12px; }
 .wordmark span { color: var(--muted); font-weight: 600; }
 .topbar nav { display: flex; align-items: center; gap: 2px; }
-.access-mode {
+.access-switch { display: inline-flex; gap: 4px; margin-right: 4px; }
+.access-choice {
   min-height: 26px;
-  margin-right: 6px;
   padding: 0 9px;
   display: inline-flex;
   align-items: center;
+  border: 1px solid transparent;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 760;
   letter-spacing: .04em;
   white-space: nowrap;
+  text-decoration: none;
 }
-.access-mode[data-mode="edit"] { color: #1d6b3c; background: #e4f5ea; }
-.access-mode[data-mode="read"] { color: #8a4b12; background: #f8ead7; }
+.access-choice[data-mode="read"] { color: #8a4b12; background: transparent; border-color: #ead7c0; }
+.access-choice[data-mode="edit"] { color: #1d6b3c; background: transparent; border-color: #cfe6d6; }
+.access-choice.is-current[data-mode="read"] { color: #8a4b12; background: #f8ead7; border-color: transparent; }
+.access-choice.is-current[data-mode="edit"] { color: #1d6b3c; background: #e4f5ea; border-color: transparent; }
 html[data-access-mode="read"] .todo-form,
 html[data-access-mode="read"] .todo-delete,
 html[data-access-mode="read"] [data-ledger-form="bill"],
@@ -114,7 +118,13 @@ html[data-access-mode="read"] .todo-item input { pointer-events: none; }
   font-size: 12px;
   font-weight: 650;
 }
-.topbar nav a:active { color: var(--lake); }
+.topbar nav a.access-choice {
+  min-width: 0;
+  min-height: 26px;
+  padding: 0 9px;
+  font-size: 11px;
+  font-weight: 760;
+}
 
 main { overflow: hidden; }
 .hero, .section, .footer { width: min(100%, var(--content)); margin-inline: auto; }
