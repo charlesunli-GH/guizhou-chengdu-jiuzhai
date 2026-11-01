@@ -15,7 +15,8 @@
     choices.forEach((choice) => {
       const selected = choice.dataset.mode === mode;
       choice.classList.toggle("is-current", selected);
-      choice.setAttribute("aria-current", selected ? "page" : "false");
+      if (selected) choice.setAttribute("aria-current", "page");
+      else choice.removeAttribute("aria-current");
       const target = `/__switch?mode=${encodeURIComponent(choice.dataset.mode)}&next=${encodeURIComponent(next)}`;
       choice.href = target;
       choice.title = selected ? `当前是${choice.textContent}` : `输入密码后进入${choice.textContent}`;

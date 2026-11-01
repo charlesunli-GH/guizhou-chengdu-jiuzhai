@@ -1397,19 +1397,20 @@
         }
       }
     }
+    globalThis.tripLanguage?.apply(ledgerRoot);
   }
 
   function setNotice(message) {
     notice = message;
     const live = ledgerRoot?.querySelector(".ledger-live");
-    if (live) live.textContent = message;
+    if (live) live.textContent = globalThis.tripLanguage?.translate(message) ?? message;
   }
 
   function setFormError(form, message) {
     const target = form.querySelector("[data-ledger-form-error]");
-    if (target) target.textContent = message;
+    if (target) target.textContent = globalThis.tripLanguage?.translate(message) ?? message;
     const live = ledgerRoot?.querySelector(".ledger-live");
-    if (live) live.textContent = message;
+    if (live) live.textContent = globalThis.tripLanguage?.translate(message) ?? message;
   }
 
   function enqueueMutation(operation) {

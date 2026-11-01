@@ -65,8 +65,23 @@ img { display: block; max-width: 100%; }
 }
 .wordmark { min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; font-weight: 800; letter-spacing: 0.06em; font-size: 12px; }
 .wordmark span { color: var(--muted); font-weight: 600; }
-.topbar nav { display: flex; align-items: center; gap: 2px; }
-.access-switch { display: inline-flex; gap: 4px; margin-right: 4px; }
+.topbar nav { display: flex; align-items: center; gap: 2px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.topbar nav::-webkit-scrollbar { display: none; }
+.language-switch { display: inline-flex; gap: 3px; margin-right: 6px; flex: 0 0 auto; }
+.language-switch button {
+  min-height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 760;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.language-switch button.is-current { color: var(--ink); background: #fff; border-color: transparent; box-shadow: 0 1px 2px rgba(19, 38, 47, .08); }
+.access-switch { display: inline-flex; gap: 4px; margin-right: 4px; flex: 0 0 auto; }
 .access-choice {
   min-height: 26px;
   padding: 0 9px;
@@ -159,33 +174,81 @@ main { overflow: hidden; }
   flex: 0 0 calc(100% - 20px);
   scroll-snap-align: center;
   min-height: 330px;
+  border-radius: 18px;
+  box-shadow: 0 18px 40px rgba(28, 36, 48, .14);
+}
+.flight-card--placeholder {
   padding: 20px;
-  border-radius: var(--radius-lg);
   color: #eff8f8;
   background: var(--ink);
-  box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
 }
 .flight-card__top { color: #a9c3c8; font: 700 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.08em; }
-.flight-card__airlines { margin-top: 7px; color: #7599a0; font-size: 10px; }
-.flight-flow { margin-top: 17px; display: grid; grid-template-columns: var(--route-columns); align-items: start; }
-.flight-stop { min-width: 0; text-align: center; }
-.flight-stop:first-child { text-align: left; }
-.flight-stop:last-child { text-align: right; }
-.flight-stop__code { display: block; color: #fff; font: 760 clamp(25px, 8vw, 36px)/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: -.05em; }
-.flight-stop__city { display: block; min-height: 30px; margin-top: 5px; color: #b8cccf; font-size: 11px; line-height: 1.25; }
-.flight-stop__dot { position: relative; z-index: 1; display: inline-block; width: 9px; height: 9px; margin: 8px 0 10px; border: 2px solid #8fc6d0; border-radius: 50%; background: var(--ink); }
-.flight-stop__timing { display: flex; flex-direction: column; gap: 3px; color: #9db7bc; font-size: 9px; line-height: 1.3; }
-.flight-stop__timing b { color: #eff8f8; font-size: 10px; font-weight: 720; }
-.flight-stop__timing em { color: #e0a983; font-style: normal; font-size: 9px; }
-.flight-segment { min-width: 0; padding-top: 53px; color: #91b9c0; text-align: center; }
-.flight-segment span { display: block; overflow: hidden; font: 700 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; text-overflow: ellipsis; white-space: nowrap; }
-.flight-segment i { display: block; height: 1px; margin-top: 9px; background: rgba(143,198,208,.5); color: #8fc6d0; font-style: normal; font-size: 13px; line-height: 1px; text-align: right; }
-.flight-card__countdown-row { margin-top: auto; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.16); }
+.boarding-pass {
+  --pass: #1c2430;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px;
+  overflow: hidden;
+  color: #1c2430;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,0) 92px),
+    #f4efe4;
+}
+.boarding-pass[data-airline="fm"] { --pass: #9d1c2f; }
+.boarding-pass[data-airline="cz"] { --pass: #0d3f8c; }
+.boarding-pass__main { min-width: 0; padding: 16px 16px 12px; border-top: 8px solid var(--pass); }
+.boarding-pass__head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.boarding-pass__brand { color: var(--pass); font-size: 13px; font-weight: 800; letter-spacing: .04em; }
+.boarding-pass__kind { color: #8a7d6c; font: 700 10px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .14em; text-transform: uppercase; }
+.boarding-pass__kind b { color: #1c2430; font-weight: 760; }
+.boarding-pass__route { margin-top: 14px; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: start; }
+.boarding-pass__end { min-width: 0; }
+.boarding-pass__end.is-arrival { text-align: right; }
+.boarding-pass__code { display: block; font: 780 clamp(34px, 10vw, 48px)/.88 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: -.05em; }
+.boarding-pass__city { display: block; margin-top: 4px; font-size: 13px; font-weight: 760; }
+.boarding-pass__airport { display: block; min-height: 15px; color: #6f6458; font-size: 11px; }
+.boarding-pass__time { display: block; margin-top: 8px; font: 760 22px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: -.03em; }
+.boarding-pass__when { display: block; margin-top: 4px; color: #6f6458; font-size: 11px; }
+.boarding-pass__leg { min-width: 74px; padding-top: 18px; color: var(--pass); text-align: center; font: 760 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.boarding-pass__leg i { display: block; position: relative; height: 2px; margin: 8px 0 6px; background: linear-gradient(90deg, transparent, var(--pass), transparent); }
+.boarding-pass__leg i::after { content: "✈"; position: absolute; right: -2px; top: -9px; font-style: normal; font-size: 13px; }
+.boarding-pass__leg small { display: block; color: #6f6458; font-size: 10px; font-weight: 650; }
+.boarding-pass__facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 8px; margin: 16px 0 0; }
+.boarding-pass__facts div { min-width: 0; }
+.boarding-pass__facts dt { margin: 0; color: #8a7d6c; font: 750 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .12em; text-transform: uppercase; }
+.boarding-pass__facts dd { margin: 3px 0 0; overflow: hidden; font: 740 13px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.boarding-pass__missing { margin: 10px 0 0; color: #8a7d6c; font-size: 10px; line-height: 1.4; }
+.boarding-pass__barcode { display: flex; align-items: flex-end; gap: 2px; height: 48px; margin-top: 12px; }
+.boarding-pass__barcode i { display: block; background: #1c2430; }
+.boarding-pass__scan { margin: 4px 0 0; color: #1c2430; font: 650 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .16em; }
+.boarding-pass__stub {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 8px 14px;
+  background:
+    repeating-linear-gradient(135deg, rgba(28,36,48,.035) 0 1px, transparent 1px 7px),
+    #efe4cf;
+  color: var(--pass);
+  text-align: center;
+}
+.boarding-pass__stub::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; border-left: 1px dashed rgba(28, 36, 48, .35); }
+.boarding-pass__stub-flight { writing-mode: vertical-rl; transform: rotate(180deg); font: 800 16px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .14em; }
+.boarding-pass__stub-route { font: 750 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.boarding-pass__stub-route i { margin: 0 3px; font-style: normal; }
+.boarding-pass__stub-time { font: 780 18px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.boarding-pass__stub-date { color: #6f6458; font-size: 10px; }
+.flight-card__countdown-row { grid-column: 1 / -1; margin-top: auto; padding: 12px 16px 14px; border-top: 1px dashed rgba(28, 36, 48, .22); background: rgba(255,255,255,.35); }
+.flight-card--placeholder .flight-card__countdown-row { padding-top: 18px; border-top: 1px solid rgba(255,255,255,.16); background: transparent; }
 .flight-countdown { text-align: left; }
-.flight-countdown span { display: block; color: #a9c3c8; font-size: 11px; }
-.flight-countdown strong { display: block; margin-top: 5px; color: #fff; font: 760 clamp(22px, 7vw, 30px)/1.1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.flight-countdown span { display: block; color: #6f6458; font-size: 11px; }
+.flight-countdown strong { display: block; margin-top: 5px; color: #1c2430; font: 760 clamp(22px, 7vw, 30px)/1.1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.flight-card--placeholder .flight-countdown span { color: #a9c3c8; }
+.flight-card--placeholder .flight-countdown strong { color: #fff; }
 .flight-placeholder { margin: 34px 0 22px; }
 .flight-placeholder__eyebrow { color: #e0a983; font: 760 10px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .12em; }
 .flight-placeholder h3 { margin: 9px 0 0; color: #fff; font-size: clamp(24px, 7vw, 34px); line-height: 1.08; letter-spacing: -.035em; }
@@ -412,7 +475,8 @@ main { overflow: hidden; }
   .topbar { padding-inline: max(24px, calc((100vw - var(--content)) / 2)); }
   .hero { min-height: 260px; padding-inline: 0; }
   .section { padding-inline: 0; }
-  .flight-card { flex-basis: 86%; min-height: 350px; }
+  .flight-card { flex-basis: min(560px, 86%); min-height: 390px; }
+  .boarding-pass { grid-template-columns: minmax(0, 1fr) 108px; }
   .rental-stops { grid-template-columns: 1fr 1fr; }
 }
 
@@ -487,6 +551,10 @@ button:focus-visible,a:focus-visible {outline:2px solid var(--lake);outline-offs
 #map-dialog-content .daily-fullscreen {min-width:850px;}
 
 @media (max-width:699px) {
+  .boarding-pass { grid-template-columns: 1fr; }
+  .boarding-pass__stub { flex-direction: row; justify-content: space-between; min-height: 72px; padding: 12px 16px; }
+  .boarding-pass__stub::before { top: 0; bottom: auto; left: 16px; right: 16px; border-left: 0; border-top: 1px dashed rgba(28, 36, 48, .35); }
+  .boarding-pass__stub-flight { writing-mode: horizontal-tb; transform: none; }
   .is-daily .map-place-dot {width:14px;height:14px;}
   .is-daily .map-place-dot span {width:8px;height:8px;border-width:1px;}
   .is-daily .transport-pin {width:24px;height:24px;padding:5px;border-radius:7px;}

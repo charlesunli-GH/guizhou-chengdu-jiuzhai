@@ -66,6 +66,7 @@ function applyModuleConfig() {
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+const tr = (value) => globalThis.tripLanguage?.translate(value) ?? value;
 const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, (character) => ({
   "&": "&amp;",
   "<": "&lt;",
@@ -122,6 +123,10 @@ function formatDate(dateString, includeYear = false) {
 
 function formatCompactDate(dateString) {
   const [, month, day] = dateString.split("-");
+  if (globalThis.tripLanguage?.lang() === "en") {
+    const names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return `${names[Number(month) - 1]} ${Number(day)}`;
+  }
   return `${Number(month)}月${Number(day)}日`;
 }
 
@@ -189,7 +194,7 @@ function renderHero() {
   $("#wordmark").innerHTML = `${escapeHtml(shortMark)} <span>· ${escapeHtml(year)}</span>`;
   $("#footer-mark").textContent = `${shortMark} · ${year}`;
   $("#route-day-count").textContent = `${trip.dayCount} DAYS`;
-  $("#trip-date").textContent = `${formatCompactDate(trip.startDate)} — ${formatCompactDate(trip.endDate)} · ${trip.dayCount}天`;
+  $("#trip-date").textContent = tr(`${formatCompactDate(trip.startDate)} — ${formatCompactDate(trip.endDate)} · ${trip.dayCount}天`);
 }
 
 function journeyFlights(journeyId) {
@@ -279,6 +284,27 @@ function flightPlaceholderCard(journey, index) {
   `;
 }
 
+function barcodeMarkup(seed) {
+  let hash = 2166136261;
+  const text = String(seed || "FLIGHT");
+  for (let index = 0; index < text.length; index += 1) hash ^= text.charCodeAt(index);
+  const bars = [];
+  for (let index = 0; index < 46; index += 1) {
+    hash = Math.imul(hash ^ (hash >>> 15), 2246822519) >>> 0;
+    const width = 1 + (hash % 3);
+    const height = hash % 8 === 0 ? 68 : 100;
+    bars.push(`<i style="width:${width}px;height:${height}%"></i>`);
+  }
+  return `<div class="boarding-pass__barcode" aria-hidden="true">${bars.join("")}</div>`;
+}
+
+function airlineKey(flight) {
+  const name = `${flight.airline?.name || ""} ${flight.airline?.nameZh || ""} ${flight.flightNumber || ""}`.toLowerCase();
+  if (name.includes("southern") || name.includes("南方") || name.startsWith("cz")) return "cz";
+  if (name.includes("shanghai") || name.includes("上海航空") || name.startsWith("fm")) return "fm";
+  return "default";
+}
+
 function flightCard(journey, index) {
   const flights = journeyFlights(journey.id);
   if (journey.placeholder || journey.status === "missing" || journey.status === "pending" || !flights.length || flights.some((flight) => flight.placeholder)) {
@@ -286,38 +312,63 @@ function flightCard(journey, index) {
   }
   const first = flights[0];
   const last = flights[flights.length - 1];
+  const airline = first.airline.nameZh || first.airline.name || "";
+  const numbers = flights.map((flight) => flight.flightNumber).filter(Boolean).join(" / ");
   const status = journeyStatusAndTarget(flights);
   const countdown = status.complete ? "已完成" : preciseCountdownText(status.target, "即将出发");
-  const stops = [
-    { airport: first.departure, departure: first.departure },
-    ...flights.map((flight, flightIndex) => ({
-      airport: flight.arrival,
-      arrival: flight.arrival,
-      nextFlight: flights[flightIndex + 1]
-    }))
-  ];
-  const routeItems = [];
-  stops.forEach((stop, stopIndex) => {
-    routeItems.push(flightStopMarkup({ ...stop, totalStops: stops.length }, stopIndex, first.departure.date));
-    if (stopIndex < flights.length) {
-      const flight = flights[stopIndex];
-      routeItems.push(`
-        <div class="flight-segment">
-          <span>${escapeHtml(flight.flightNumber)}</span>
-          <i aria-hidden="true">→</i>
-        </div>
-      `);
-    }
-  });
+  const groupSize = state.data.trip?.groupSize;
+  const passenger = groupSize ? `${groupSize} 人` : "—";
+  const via = flights.length > 1
+    ? flights.slice(0, -1).map((flight) => flight.arrival.city || flight.arrival.airportCode).filter(Boolean).join(" · ")
+    : "";
+  const total = state.data.flightJourneys.length;
+  const scan = `${numbers} ${first.departure.airportCode}${last.arrival.airportCode}`;
   return `
-    <article class="flight-card" data-journey="${escapeHtml(journey.id)}">
-      <div class="flight-card__top">
-        <span>FLIGHT ${String(index + 1).padStart(2, "0")} / ${String(state.data.flightJourneys.length).padStart(2, "0")}</span>
+    <article class="flight-card boarding-pass" data-journey="${escapeHtml(journey.id)}" data-airline="${airlineKey(first)}">
+      <div class="boarding-pass__main">
+        <header class="boarding-pass__head">
+          <span class="boarding-pass__brand">${escapeHtml(airline)}</span>
+          <span class="boarding-pass__kind">登机牌 <b>${String(index + 1).padStart(2, "0")}/${String(total).padStart(2, "0")}</b></span>
+        </header>
+        <div class="boarding-pass__route">
+          <div class="boarding-pass__end">
+            <span class="boarding-pass__code">${escapeHtml(first.departure.airportCode)}</span>
+            <span class="boarding-pass__city">${escapeHtml(first.departure.city || "")}</span>
+            <span class="boarding-pass__airport">${escapeHtml(first.departure.airportName || "")}</span>
+            <strong class="boarding-pass__time">${escapeHtml(first.departure.time)}</strong>
+            <span class="boarding-pass__when">${escapeHtml(formatCompactDate(first.departure.date))} 出发</span>
+          </div>
+          <div class="boarding-pass__leg" aria-hidden="true">
+            <span>${escapeHtml(numbers)}</span>
+            <i></i>
+            <small>${via ? `经 ${escapeHtml(via)}` : "直飞"}</small>
+          </div>
+          <div class="boarding-pass__end is-arrival">
+            <span class="boarding-pass__code">${escapeHtml(last.arrival.airportCode)}</span>
+            <span class="boarding-pass__city">${escapeHtml(last.arrival.city || "")}</span>
+            <span class="boarding-pass__airport">${escapeHtml(last.arrival.airportName || "")}</span>
+            <strong class="boarding-pass__time">${escapeHtml(last.arrival.time)}</strong>
+            <span class="boarding-pass__when">${escapeHtml(formatCompactDate(last.arrival.date))} 抵达</span>
+          </div>
+        </div>
+        <dl class="boarding-pass__facts">
+          <div><dt>日期</dt><dd>${escapeHtml(formatCompactDate(first.departure.date))}</dd></div>
+          <div><dt>航班</dt><dd>${escapeHtml(numbers || "—")}</dd></div>
+          <div><dt>旅客</dt><dd>${escapeHtml(passenger)}</dd></div>
+          <div><dt>登机口</dt><dd>—</dd></div>
+          <div><dt>座位</dt><dd>—</dd></div>
+          <div><dt>舱位</dt><dd>—</dd></div>
+        </dl>
+        <p class="boarding-pass__missing">登机口、座位和舱位未写在行程里。</p>
+        ${barcodeMarkup(`${numbers}|${first.departure.date}|${first.departure.airportCode}`)}
+        <p class="boarding-pass__scan">${escapeHtml(scan)}</p>
       </div>
-      <div class="flight-card__airlines">${escapeHtml([...new Set(flights.map((flight) => flight.airline.nameZh || flight.airline.name))].join(" · "))}</div>
-      <div class="flight-flow" style="--route-columns: ${stops.map((_, stopIndex) => stopIndex < stops.length - 1 ? "minmax(0,1fr) minmax(34px,.5fr)" : "minmax(0,1fr)").join(" ")}">
-        ${routeItems.join("")}
-      </div>
+      <aside class="boarding-pass__stub">
+        <span class="boarding-pass__stub-flight">${escapeHtml(numbers)}</span>
+        <span class="boarding-pass__stub-route">${escapeHtml(first.departure.airportCode)}<i>→</i>${escapeHtml(last.arrival.airportCode)}</span>
+        <span class="boarding-pass__stub-time">${escapeHtml(first.departure.time)}</span>
+        <span class="boarding-pass__stub-date">${escapeHtml(formatCompactDate(first.departure.date))}</span>
+      </aside>
       <div class="flight-card__countdown-row">
         <div class="flight-countdown" data-countdown-journey="${escapeHtml(journey.id)}">
           <span>${escapeHtml(status.label)}</span>
@@ -363,8 +414,8 @@ function updateFlightCountdowns() {
     const target = $(`[data-countdown-journey="${journey.id}"]`);
     if (!target || target.dataset.placeholder === "true" || journey.placeholder) return;
     const status = journeyStatusAndTarget(journeyFlights(journey.id));
-    $("strong", target).textContent = status.complete ? "已完成" : preciseCountdownText(status.target, "即将出发");
-    $("span", target).textContent = status.label;
+    $("strong", target).textContent = tr(status.complete ? "已完成" : preciseCountdownText(status.target, "即将出发"));
+    $("span", target).textContent = tr(status.label);
   });
 }
 
@@ -611,7 +662,7 @@ function updateInlineTicketState(ticketId, purchased) {
     ticket.classList.toggle("is-purchased", purchased);
     ticket.querySelector("input").checked = purchased;
     ticket.querySelector("input").setAttribute("aria-label", `${purchased ? "取消已购票" : "标记为已购票"}：${ticketTitle(ticketData)}`);
-    ticket.querySelector(".schedule-ticket__status").textContent = purchased ? "已购票" : ticketRequirement(ticketData);
+    ticket.querySelector(".schedule-ticket__status").textContent = tr(purchased ? "已购票" : ticketRequirement(ticketData));
   });
   const day = state.data.days.find((item) => ticketData.dayId ? item.id === ticketData.dayId : item.day === ticketData.day);
   const dayCardElement = day ? $(`[data-day="${day.day}"]`) : null;
@@ -619,7 +670,7 @@ function updateInlineTicketState(ticketId, purchased) {
   const dayTickets = day ? ticketsForDay(day) : [];
   const pending = dayTickets.filter((ticket) => !isTicketPurchased(ticket)).length;
   if (!badge) return;
-  badge.textContent = pending ? `${pending} 项待购票` : "门票已准备";
+  badge.textContent = tr(pending ? `${pending} 项待购票` : "门票已准备");
   badge.classList.toggle("has-pending", pending > 0);
   badge.classList.toggle("is-complete", pending === 0);
 }
@@ -702,7 +753,10 @@ function renderRental() {
     $$("button[data-drive-note]", notes).forEach((item) => item.setAttribute("aria-expanded", String(item === button && !collapse)));
     const panel = $(".drive-note-panel", notes);
     panel.hidden = collapse;
-    if (!collapse) panel.innerHTML = `<ul>${panels[button.dataset.driveNote]}</ul>`;
+    if (!collapse) {
+      panel.innerHTML = `<ul>${panels[button.dataset.driveNote]}</ul>`;
+      globalThis.tripLanguage?.apply(panel);
+    }
   };
 }
 
@@ -710,15 +764,15 @@ function updateRentalCountdown() {
   const dropoff = state.data.groundTransport.rentalCar.dropoff;
   const deadline = new Date(`${dropoff.date}T${dropoff.time}:00${dropoff.utcOffset}`);
   const remaining = deadline.getTime() - Date.now();
-  $("#return-deadline-timer").textContent = remaining > 0
+  $("#return-deadline-timer").textContent = tr(remaining > 0
     ? `距还车截止 ${preciseCountdownText(deadline)}`
-    : "预约还车时间已过 · 如尚未还车，请立即联系租车公司";
+    : "预约还车时间已过 · 如尚未还车，请立即联系租车公司");
   $(".return-deadline").classList.toggle("is-urgent", remaining <= 86400000);
   const panel = $("#rental-countdown");
   if (!panel) return;
   const status = rentalStatus(state.data.groundTransport.rentalCar);
-  $("span", panel).textContent = status.label;
-  $("strong", panel).textContent = status.complete ? `请立即联系 ${state.data.groundTransport.rentalCar.company}` : countdownText(status.target);
+  $("span", panel).textContent = tr(status.label);
+  $("strong", panel).textContent = tr(status.complete ? `请立即联系 ${state.data.groundTransport.rentalCar.company}` : countdownText(status.target));
 }
 
 function loadTodoState() { state.todos = []; }
@@ -861,7 +915,7 @@ function openTicketDialog(ticketId, opener) {
   const dialog = $("#ticket-dialog");
   if (!ticket || !dialog) return;
   ticketDialogOpener = opener || null;
-  $("#ticket-dialog-title").textContent = ticketTitle(ticket);
+    $("#ticket-dialog-title").textContent = tr(ticketTitle(ticket));
   const document = ticketDocument(ticket);
   const localDocument = localAssetUrl(document?.url);
   const externalDocument = !localDocument ? safeExternalUrl(document?.url) : "";
@@ -921,7 +975,7 @@ function setupPlaceMap() {
     if (!link) return;
     event.preventDefault();
     opener = link;
-    $("#place-map-title").textContent = link.dataset.mapLabel;
+    $("#place-map-title").textContent = tr(link.dataset.mapLabel);
     $("#place-map-external").href = safeExternalUrl(link.dataset.mapUrl) || mapsSearch(link.dataset.mapQuery);
     frame.title = `${link.dataset.mapLabel} Google Maps`;
     frame.src = `https://maps.google.com/maps?q=${encodeURIComponent(link.dataset.mapQuery)}&output=embed`;
@@ -999,9 +1053,11 @@ async function init() {
       await window.TravelLedger?.init?.({ tripId: state.data.metadata.tripId, config: state.config });
     }
     startCountdowns();
+    globalThis.tripLanguage?.apply(document.body);
   } catch (error) {
     console.error("Travel data could not be loaded", error);
     $("#loading-error").hidden = false;
+    globalThis.tripLanguage?.apply(document.body);
   }
 }
 

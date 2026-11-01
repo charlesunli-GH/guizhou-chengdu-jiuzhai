@@ -143,17 +143,92 @@ function loginPage(nextPath, options = {}) {
     button[type="submit"] { background: #287b90; }
     .back-link { justify-self: start; color: #607174; font-size: 13px; font-weight: 700; }
     .error { color: #9a3d32; }
+    .gate { width: min(100%, 420px); display: grid; gap: 12px; }
+    .language-switch { display: flex; justify-content: flex-end; gap: 6px; }
+    .language-switch button {
+      min-height: 28px; padding: 0 10px; border: 1px solid #d5e0e2; border-radius: 999px;
+      background: transparent; color: #607174; font: inherit; font-size: 12px; font-weight: 760; cursor: pointer;
+    }
+    .language-switch button.is-current { color: #13262f; background: #fff; border-color: transparent; box-shadow: 0 1px 2px rgba(19,38,47,.08); }
+    form { width: 100%; }
   </style>
 </head>
 <body>
-  <form method="post" action="/__unlock">
+  <div class="gate">
+    <div class="language-switch" role="group" aria-label="Language">
+      <button type="button" data-set-lang="en">English</button>
+      <button type="button" data-set-lang="zh">中文</button>
+    </div>
+    <form method="post" action="/__unlock">
     <h1>${selectedMode ? `进入${label}` : "选择进入方式"}</h1>
     <input type="hidden" name="next" value="${escapeHtml(nextPath)}">
     ${passwordStep}
-  </form>
+    </form>
+  </div>
   <script>
     const next = document.querySelector('[name="next"]');
     if (next && location.hash && !next.value.includes("#")) next.value += location.hash;
+    const KEY = "trip-page-language";
+    const copy = {
+      "选择进入方式": "Choose how to enter",
+      "进入只读": "Enter read-only",
+      "进入可编辑": "Enter editable",
+      "输入只读密码": "Enter the read-only password",
+      "输入可编辑密码": "Enter the editable password",
+      "只读": "Read-only",
+      "可编辑": "Editable",
+      "只读密码": "Read-only password",
+      "可编辑密码": "Editable password",
+      "密码不正确，请输入只读密码。": "Incorrect password. Enter the read-only password.",
+      "密码不正确，请输入可编辑密码。": "Incorrect password. Enter the editable password.",
+      "请输入只读密码。验证通过后进入只读页面。": "Enter the read-only password to open the read-only page.",
+      "请输入可编辑密码。验证通过后进入可编辑页面。": "Enter the editable password to open the editable page.",
+      "先选择只读或可编辑，再输入对应的密码。": "Choose read-only or editable, then enter that password.",
+      "重新选择": "Choose again"
+    };
+    const ordered = Object.entries(copy).sort((left, right) => right[0].length - left[0].length);
+    function currentLang() {
+      try { return localStorage.getItem(KEY) === "en" ? "en" : "zh"; } catch (error) { return "zh"; }
+    }
+    function translate(value) {
+      if (!value || !/[\\u4e00-\\u9fff]/.test(value)) return value;
+      const trimmed = value.trim();
+      if (copy[trimmed]) {
+        const start = value.match(/^\\s*/)[0];
+        const end = value.match(/\\s*$/)[0];
+        return start + copy[trimmed] + end;
+      }
+      let nextText = value;
+      ordered.forEach(([zh, en]) => { if (nextText.includes(zh)) nextText = nextText.split(zh).join(en); });
+      return nextText;
+    }
+    function applyLoginLanguage() {
+      const lang = currentLang();
+      document.documentElement.lang = lang === "en" ? "en" : "zh-CN";
+      document.querySelectorAll("[data-set-lang]").forEach((button) => {
+        const on = button.dataset.setLang === lang;
+        button.classList.toggle("is-current", on);
+        button.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      if (lang !== "en") return;
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      nodes.forEach((node) => {
+        if (node.parentElement?.closest("[data-set-lang]")) return;
+        const nextText = translate(node.nodeValue);
+        if (nextText !== node.nodeValue) node.nodeValue = nextText;
+      });
+      document.title = translate(document.title);
+    }
+    document.querySelectorAll("[data-set-lang]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const nextLang = button.dataset.setLang === "en" ? "en" : "zh";
+        try { localStorage.setItem(KEY, nextLang); } catch (error) {}
+        location.reload();
+      });
+    });
+    applyLoginLanguage();
   </script>
 </body>
 </html>`;
