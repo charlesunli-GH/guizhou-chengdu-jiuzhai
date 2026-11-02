@@ -3,6 +3,16 @@ import { authorize, stampAccessMode } from "./access-gate.js";
 export async function onRequest(context) {
   const decision = await authorize(context.request, context.env.SITE_PASSWORD || "");
   if (decision instanceof Response) return decision;
+  if (decision.mode !== "edit" && context.request.method !== "GET" && context.request.method !== "HEAD") {
+    return new Response(JSON.stringify({ error: "read-only" }), {
+      status: 403,
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "private, no-store",
+        "vary": "Cookie"
+      }
+    });
+  }
 
   const response = await context.next();
   const headers = new Headers(response.headers);

@@ -157,6 +157,8 @@
   let ledgerTransferMode = "";
   let ledgerTransferText = "";
   let ledgerTransferFocus = false;
+  let ledgerTransferEpoch = 0;
+  let sharedLedgerReady = true;
 
   function normalizeSearch(value) {
     return String(value || "")
@@ -1437,24 +1439,6 @@
     </div>`;
   }
 
-  function localLedgerStorageKey() {
-    if (ledgerPersistenceMode !== "local") return "";
-    const fromAdapter = ledgerAdapter?.storageKey;
-    if (typeof fromAdapter === "string" && fromAdapter) return fromAdapter;
-    if (!ledgerTripId) return "";
-    return `travel-plan:runtime:v1:${encodeURIComponent(ledgerTripId)}`;
-  }
-
-  function readLedgerStorageValue() {
-    const key = localLedgerStorageKey();
-    if (!key) return "";
-    try {
-      return localStorage.getItem(key) ?? "";
-    } catch {
-      return "";
-    }
-  }
-
   function ledgerHasRecords() {
     return Boolean(
       ledgerData?.bills?.length
@@ -1483,38 +1467,59 @@
     return { ok: true, text };
   }
 
-  function restoreLedgerStorage(key, previous) {
-    try {
-      if (previous === null) localStorage.removeItem(key);
-      else localStorage.setItem(key, previous);
-    } catch {
-      // The original value could not be put back; the caller still reports failure.
-    }
+  function ledgerExportText() {
+    if (!ledgerData) return "";
+    const data = normalizeData(ledgerData);
+    return JSON.stringify({
+      version: data.version,
+      settings: data.settings,
+      travelers: data.travelers,
+      bills: data.bills,
+      updatedAt: data.updatedAt
+    });
+  }
+
+  function copyResultStillApplies(epoch) {
+    return epoch === ledgerTransferEpoch && ledgerTransferMode !== "paste";
   }
 
   function copyLedger() {
-    const raw = readLedgerStorageValue();
-    if (!String(raw).trim()) {
-      ledgerTransferMode = "";
-      ledgerTransferText = "";
-      notice = "当前没有可复制的记账。";
-      renderApp();
+    const epoch = ++ledgerTransferEpoch;
+    const raw = ledgerExportText();
+    if (!raw) {
+      if (copyResultStillApplies(epoch)) setNotice("当前没有可复制的记账。");
       return;
     }
+    const finishSuccess = () => {
+      if (!copyResultStillApplies(epoch)) return;
+      notice = "记账已复制。";
+      if (ledgerTransferMode === "copy") {
+        ledgerTransferMode = "";
+        ledgerTransferText = "";
+        renderApp();
+        return;
+      }
+      setNotice(notice);
+    };
+    const finishFailure = () => {
+      if (!copyResultStillApplies(epoch)) return;
+      showLedgerCopyFallback(raw);
+    };
     const writeText = globalThis.navigator?.clipboard?.writeText;
     if (typeof writeText === "function") {
-      const pending = writeText.call(globalThis.navigator.clipboard, raw);
+      let pending;
+      try {
+        pending = writeText.call(globalThis.navigator.clipboard, raw);
+      } catch {
+        finishFailure();
+        return;
+      }
       if (pending && typeof pending.then === "function") {
-        pending.then(() => {
-          ledgerTransferMode = "";
-          ledgerTransferText = "";
-          notice = "记账已复制。";
-          renderApp();
-        }, () => showLedgerCopyFallback(raw));
+        pending.then(finishSuccess, finishFailure);
         return;
       }
     }
-    showLedgerCopyFallback(raw);
+    finishFailure();
   }
 
   function showLedgerCopyFallback(raw) {
@@ -1526,12 +1531,9 @@
   }
 
   function beginPasteLedger() {
+    ledgerTransferEpoch += 1;
     if (globalThis.tripAccess?.canEdit?.() === false) {
       setNotice("当前是只读，不能修改。");
-      return;
-    }
-    if (!localLedgerStorageKey()) {
-      setNotice("当前记账不在这台浏览器里，不能粘贴。");
       return;
     }
     ledgerTransferMode = "paste";
@@ -1566,23 +1568,21 @@
       setNotice("当前是只读，不能修改。");
       return;
     }
-    const key = localLedgerStorageKey();
-    if (!key) {
-      setNotice("写入失败，现有记账没有改动。");
+    if (ledgerPersistenceMode === "d1" && !sharedLedgerReady) {
+      setNotice("共享账本暂时无法读取，没有写入。");
       return;
     }
-    let previous = null;
-    let hadKey = false;
+    let parsed;
     try {
-      hadKey = localStorage.getItem(key) !== null;
-      previous = localStorage.getItem(key);
-      localStorage.setItem(key, verdict.text);
-      if (localStorage.getItem(key) !== verdict.text) throw new Error("mismatch");
-      const stored = await Promise.resolve(ledgerAdapter.load({ tripId: ledgerTripId }));
-      ledgerData = normalizeData(stored);
+      parsed = JSON.parse(verdict.text);
     } catch {
-      if (hadKey) restoreLedgerStorage(key, previous);
-      else restoreLedgerStorage(key, null);
+      setNotice("记账格式不对，没有写入。");
+      return;
+    }
+    try {
+      const saved = await Promise.resolve(ledgerAdapter.save(normalizeData(parsed), { tripId: ledgerTripId }));
+      ledgerData = normalizeData(saved || parsed);
+    } catch {
       setNotice("写入失败，现有记账没有改动。");
       return;
     }
@@ -2245,6 +2245,7 @@
     } else if (action === "paste-ledger") {
       beginPasteLedger();
     } else if (action === "cancel-ledger-transfer") {
+      ledgerTransferEpoch += 1;
       ledgerTransferMode = "";
       ledgerTransferText = "";
       notice = "";
@@ -2357,6 +2358,35 @@
     }
   }
 
+  function legacyLocalLedgerKey() {
+    return `travel-plan:runtime:v1:${encodeURIComponent(ledgerTripId || "default-trip")}`;
+  }
+
+  async function adoptLocalLedgerIfCloudEmpty(remote) {
+    const remoteData = normalizeData(remote);
+    if (remoteData.travelers.length || remoteData.bills.length) return remote;
+    if (globalThis.tripAccess?.canEdit?.() === false) return remote;
+    const localAdapter = createLocalStorageAdapter(ledgerTripId, { storageKey: legacyLocalLedgerKey() });
+    let localRaw = null;
+    try {
+      localRaw = await Promise.resolve(localAdapter.load());
+    } catch (error) {
+      console.error("TravelLedger could not read the local ledger", error);
+      return remote;
+    }
+    const localData = normalizeData(localRaw);
+    if (!localData.travelers.length && !localData.bills.length) return remote;
+    try {
+      const saved = await Promise.resolve(ledgerAdapter.save(localData, { tripId: ledgerTripId }));
+      notice = "已把这台浏览器的记账上传到共享账本。";
+      return saved || localData;
+    } catch (error) {
+      console.error("TravelLedger could not upload the local ledger", error);
+      notice = "本机记账还没能上传，共享账本仍是空的。";
+      return remote;
+    }
+  }
+
   async function init(options = {}) {
     const requestedRoot = typeof options.root === "string"
       ? document.querySelector(options.root)
@@ -2379,14 +2409,20 @@
       ? String(ledgerAdapter.mode || "custom")
       : persistence.mode;
     let stored = null;
+    let cloudLoaded = false;
     try {
       stored = await Promise.resolve(ledgerAdapter.load({ tripId: ledgerTripId }));
+      cloudLoaded = true;
     } catch (error) {
       console.error("TravelLedger could not load data", error);
       notice = ledgerPersistenceMode === "d1"
         ? "共享账本暂时无法读取，请检查你的 Cloudflare D1 配置。"
         : "本地账本暂时无法读取，已打开一份空账本。";
     }
+    if (cloudLoaded && ledgerPersistenceMode === "d1") {
+      stored = await adoptLocalLedgerIfCloudEmpty(stored);
+    }
+    sharedLedgerReady = !(ledgerPersistenceMode === "d1" && !cloudLoaded);
     ledgerData = normalizeData(stored);
     activeTab = location.hash === "#ledger-stats" ? "stats" : "entry";
     ledgerRoot.addEventListener("click", handleRootClick);
