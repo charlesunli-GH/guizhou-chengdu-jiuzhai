@@ -364,7 +364,7 @@
         "万峰林"
       ],
       "notes": [
-        "白天活动待确认。原表只有酒店早、中、晚餐。"
+        "孩子们做作业"
       ],
       "schedule": [
         {
@@ -378,7 +378,7 @@
           "id": "d2-day",
           "time": "待确认",
           "type": "note",
-          "text": "万峰林白天活动待确认"
+          "text": "孩子们做作业"
         },
         {
           "id": "d2-lunch",
@@ -760,7 +760,7 @@
   "issuesAndUncertainties": [
     {
       "id": "gap-wanfenglin-days",
-      "text": "8 月 4 日、8 月 5 日万峰林白天活动待确认。"
+      "text": "8 月 4 日万峰林白天孩子们做作业。8 月 5 日万峰林白天活动待确认。"
     },
     {
       "id": "gap-trains",
