@@ -24,7 +24,7 @@
     "火车车次与时刻待确认。九寨沟酒店名称待确认。": "Train number and times to be confirmed. Jiuzhai hotel name to be confirmed.",
     "进出沟时刻待确认。门票待确认。": "Entry and exit times to be confirmed. Tickets to be confirmed.",
     "离开九寨沟的车站、车次和时刻待确认。": "The station, train number, and time for leaving Jiuzhai are to be confirmed.",
-    "8 月 4 日、8 月 5 日万峰林白天活动待确认。": "Daytime plans at Wanfenglin on Aug 4 and Aug 5 are to be confirmed.",
+    "8 月 4 日万峰林白天孩子们做作业。8 月 5 日万峰林白天活动待确认。": "On Aug 4 the children do homework at Wanfenglin. Daytime plans at Wanfenglin on Aug 5 are to be confirmed.",
     "兴义到成都、成都到镇江关、九寨沟到成都的车次和时刻待确认。": "Train numbers and times for Xingyi–Chengdu, Chengdu–Zhenjiangguan, and Jiuzhai–Chengdu are to be confirmed.",
     "万峰林与九寨沟酒店名称待确认。九寨沟晚数在住宿表和预算表之间不一致，待确认。": "Wanfenglin and Jiuzhai hotel names to be confirmed. Jiuzhai night counts disagree between the stay sheet and the budget sheet.",
     "包车公司、车型、取还车地点和费用待确认。": "Charter company, vehicle, pickup and drop-off places, and cost to be confirmed.",
