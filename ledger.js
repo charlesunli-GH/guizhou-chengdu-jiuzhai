@@ -154,6 +154,9 @@
   let pendingNoteSave = null;
   let noteOpenRequest = 0;
   let mutationQueue = Promise.resolve();
+  let ledgerTransferMode = "";
+  let ledgerTransferText = "";
+  let ledgerTransferFocus = false;
 
   function normalizeSearch(value) {
     return String(value || "")
@@ -1369,6 +1372,7 @@
             <button class="ledger-icon-button" type="button" data-ledger-action="open-settings" aria-label="记账设置">设置</button>
           </div>
         </header>
+        ${renderLedgerPortability()}
         <nav class="ledger-tabs" role="tablist" aria-label="记账页面">
           <button id="ledger-entry-tab" class="ledger-tab ${activeTab === "entry" ? "ledger-is-active" : ""}" type="button" role="tab" aria-selected="${activeTab === "entry"}" data-ledger-action="set-tab" data-ledger-tab="entry">记账</button>
           <button id="ledger-stats-tab" class="ledger-tab ${activeTab === "stats" ? "ledger-is-active" : ""}" type="button" role="tab" aria-selected="${activeTab === "stats"}" data-ledger-action="set-tab" data-ledger-tab="stats">账单结算</button>
@@ -1398,6 +1402,201 @@
       }
     }
     globalThis.tripLanguage?.apply(ledgerRoot);
+    if (ledgerTransferFocus) {
+      ledgerTransferFocus = false;
+      const box = ledgerRoot.querySelector("[data-ledger-transfer-text]");
+      if (box) {
+        box.focus({ preventScroll: true });
+        if (ledgerTransferMode === "copy" && typeof box.select === "function") box.select();
+      }
+    }
+  }
+
+  function renderLedgerPortability() {
+    const panel = ledgerTransferMode === "copy"
+      ? `<div class="ledger-portability-panel">
+          <p>无法直接复制。请长按下面的文本复制。</p>
+          <textarea class="ledger-transfer-text" data-ledger-transfer-text readonly rows="6">${escapeHtml(ledgerTransferText)}</textarea>
+        </div>`
+      : ledgerTransferMode === "paste"
+        ? `<form class="ledger-portability-panel" data-ledger-form="paste-ledger">
+            <p>把整段记账粘贴到下面，再点写入。</p>
+            <textarea class="ledger-transfer-text" name="payload" data-ledger-transfer-text rows="6" placeholder="在这里粘贴整段记账" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">${escapeHtml(ledgerTransferText)}</textarea>
+            <div class="ledger-form-actions">
+              <button class="ledger-text-button" type="button" data-ledger-action="cancel-ledger-transfer">取消</button>
+              <button class="ledger-secondary-button" type="submit">写入</button>
+            </div>
+          </form>`
+        : "";
+    return `<div class="ledger-portability" aria-label="移植记账">
+      <div class="ledger-portability-actions">
+        <button class="ledger-icon-button" type="button" data-ledger-action="copy-ledger">复制记账</button>
+        <button class="ledger-icon-button" type="button" data-ledger-action="paste-ledger">粘贴记账</button>
+      </div>
+      ${panel}
+    </div>`;
+  }
+
+  function localLedgerStorageKey() {
+    if (ledgerPersistenceMode !== "local") return "";
+    const fromAdapter = ledgerAdapter?.storageKey;
+    if (typeof fromAdapter === "string" && fromAdapter) return fromAdapter;
+    if (!ledgerTripId) return "";
+    return `travel-plan:runtime:v1:${encodeURIComponent(ledgerTripId)}`;
+  }
+
+  function readLedgerStorageValue() {
+    const key = localLedgerStorageKey();
+    if (!key) return "";
+    try {
+      return localStorage.getItem(key) ?? "";
+    } catch {
+      return "";
+    }
+  }
+
+  function ledgerHasRecords() {
+    return Boolean(
+      ledgerData?.bills?.length
+      || ledgerData?.travelers?.length
+      || ledgerData?.settings?.families?.length
+    );
+  }
+
+  function inspectLedgerTransfer(raw) {
+    const text = String(raw ?? "").trim();
+    if (!text) return { ok: false, reason: "empty" };
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      return { ok: false, reason: "invalid" };
+    }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return { ok: false, reason: "invalid" };
+    if (!Number.isFinite(parsed.version)) return { ok: false, reason: "invalid" };
+    if (!Array.isArray(parsed.bills) || !Array.isArray(parsed.travelers)) return { ok: false, reason: "invalid" };
+    if ("settings" in parsed && parsed.settings !== null && (typeof parsed.settings !== "object" || Array.isArray(parsed.settings))) {
+      return { ok: false, reason: "invalid" };
+    }
+    if ("todos" in parsed && !Array.isArray(parsed.todos)) return { ok: false, reason: "invalid" };
+    if ("tickets" in parsed && !Array.isArray(parsed.tickets)) return { ok: false, reason: "invalid" };
+    return { ok: true, text };
+  }
+
+  function restoreLedgerStorage(key, previous) {
+    try {
+      if (previous === null) localStorage.removeItem(key);
+      else localStorage.setItem(key, previous);
+    } catch {
+      // The original value could not be put back; the caller still reports failure.
+    }
+  }
+
+  function copyLedger() {
+    const raw = readLedgerStorageValue();
+    if (!String(raw).trim()) {
+      ledgerTransferMode = "";
+      ledgerTransferText = "";
+      notice = "当前没有可复制的记账。";
+      renderApp();
+      return;
+    }
+    const writeText = globalThis.navigator?.clipboard?.writeText;
+    if (typeof writeText === "function") {
+      const pending = writeText.call(globalThis.navigator.clipboard, raw);
+      if (pending && typeof pending.then === "function") {
+        pending.then(() => {
+          ledgerTransferMode = "";
+          ledgerTransferText = "";
+          notice = "记账已复制。";
+          renderApp();
+        }, () => showLedgerCopyFallback(raw));
+        return;
+      }
+    }
+    showLedgerCopyFallback(raw);
+  }
+
+  function showLedgerCopyFallback(raw) {
+    ledgerTransferMode = "copy";
+    ledgerTransferText = raw;
+    ledgerTransferFocus = true;
+    notice = "请长按下面的文本复制。";
+    renderApp();
+  }
+
+  function beginPasteLedger() {
+    if (globalThis.tripAccess?.canEdit?.() === false) {
+      setNotice("当前是只读，不能修改。");
+      return;
+    }
+    if (!localLedgerStorageKey()) {
+      setNotice("当前记账不在这台浏览器里，不能粘贴。");
+      return;
+    }
+    ledgerTransferMode = "paste";
+    ledgerTransferText = "";
+    ledgerTransferFocus = true;
+    notice = "";
+    renderApp();
+  }
+
+  async function applyPastedLedger(form) {
+    const verdict = inspectLedgerTransfer(new FormData(form).get("payload"));
+    if (!verdict.ok && verdict.reason === "empty") {
+      setNotice("没有内容，未替换现有记账。");
+      return;
+    }
+    if (!verdict.ok) {
+      setNotice("记账格式不对，没有写入。");
+      return;
+    }
+    if (ledgerHasRecords()) {
+      const tr = (value) => globalThis.tripLanguage?.translate(value) ?? value;
+      const confirmed = await confirmLedgerAction(tr("当前已有记账，粘贴会替换这些账。要继续吗？"), {
+        confirmLabel: tr("替换"),
+        ariaLabel: tr("替换记账")
+      });
+      if (!confirmed) {
+        setNotice("已取消粘贴。");
+        return;
+      }
+    }
+    if (globalThis.tripAccess?.canEdit?.() === false) {
+      setNotice("当前是只读，不能修改。");
+      return;
+    }
+    const key = localLedgerStorageKey();
+    if (!key) {
+      setNotice("写入失败，现有记账没有改动。");
+      return;
+    }
+    let previous = null;
+    let hadKey = false;
+    try {
+      hadKey = localStorage.getItem(key) !== null;
+      previous = localStorage.getItem(key);
+      localStorage.setItem(key, verdict.text);
+      if (localStorage.getItem(key) !== verdict.text) throw new Error("mismatch");
+      const stored = await Promise.resolve(ledgerAdapter.load({ tripId: ledgerTripId }));
+      ledgerData = normalizeData(stored);
+    } catch {
+      if (hadKey) restoreLedgerStorage(key, previous);
+      else restoreLedgerStorage(key, null);
+      setNotice("写入失败，现有记账没有改动。");
+      return;
+    }
+    editingBillId = null;
+    editingMemberId = null;
+    editingFamilyId = null;
+    editingNoteBillId = null;
+    openDialogName = null;
+    billDraft = null;
+    ledgerTransferMode = "";
+    ledgerTransferText = "";
+    notice = "记账已粘贴。";
+    renderApp();
+    ledgerRoot.dispatchEvent(new CustomEvent("travel-ledger:imported", { bubbles: true }));
   }
 
   function setNotice(message) {
@@ -1781,17 +1980,19 @@
     }, { reason: "member-updated", message: "同行人信息已更新", afterSuccess() { editingMemberId = null; } });
   }
 
-  function confirmLedgerAction(message) {
+  function confirmLedgerAction(message, options = {}) {
+    const confirmLabel = options.confirmLabel || "确认删除";
+    const ariaLabel = options.ariaLabel || "确认删除";
     return new Promise((resolve) => {
       const dialog = document.createElement("dialog");
       dialog.className = "ledger-confirm-dialog";
       dialog.setAttribute("aria-modal", "true");
-      dialog.setAttribute("aria-label", "确认删除");
+      dialog.setAttribute("aria-label", ariaLabel);
       dialog.innerHTML = `<div class="ledger-confirm-card">
         <p>${escapeHtml(message)}</p>
         <div class="ledger-confirm-actions">
           <button type="button" data-ledger-confirm="cancel">取消</button>
-          <button type="button" class="ledger-confirm-danger" data-ledger-confirm="confirm">确认删除</button>
+          <button type="button" class="ledger-confirm-danger" data-ledger-confirm="confirm">${escapeHtml(confirmLabel)}</button>
         </div>
       </div>`;
       let settled = false;
@@ -1976,7 +2177,7 @@
       "open-members", "open-families", "edit-family", "delete-family", "open-settings",
       "edit-member", "pick-base-currency", "pick-common-currency", "choose-bill-currency",
       "choose-currency", "remove-common-currency", "delete-member", "edit-bill",
-      "delete-bill", "edit-bill-note", "select-all-participants"
+      "delete-bill", "edit-bill-note", "select-all-participants", "paste-ledger"
     ]);
     if (writes.has(action) && globalThis.tripAccess?.canEdit?.() === false) {
       setNotice("当前是只读，不能修改。");
@@ -2041,6 +2242,13 @@
     } else if (action === "cancel-edit") {
       editingBillId = null;
       renderApp();
+    } else if (action === "paste-ledger") {
+      beginPasteLedger();
+    } else if (action === "cancel-ledger-transfer") {
+      ledgerTransferMode = "";
+      ledgerTransferText = "";
+      notice = "";
+      renderApp();
     } else if (action === "select-all-participants") {
       const form = button.closest("form");
       const inputs = [...form.querySelectorAll('input[name="participantIds"]')];
@@ -2056,6 +2264,10 @@
     if (!button || !ledgerRoot.contains(button)) return;
     event.preventDefault();
     const action = button.dataset.ledgerAction;
+    if (action === "copy-ledger") {
+      copyLedger();
+      return;
+    }
     const insideNoteForm = button.closest('[data-ledger-form="bill-note"]');
     if (editingNoteBillId
       && !insideNoteForm
@@ -2066,6 +2278,10 @@
   }
 
   function handleRootInput(event) {
+    if (event.target.matches("[data-ledger-transfer-text]")) {
+      ledgerTransferText = event.target.value;
+      return;
+    }
     if (event.target.matches("[data-ledger-currency-search]")) {
       currencyQuery = event.target.value;
       const results = ledgerRoot.querySelector("[data-ledger-currency-results]");
@@ -2092,6 +2308,10 @@
     const form = event.target.closest("form[data-ledger-form]");
     if (!form || !ledgerRoot.contains(form)) return;
     event.preventDefault();
+    if (form.dataset.ledgerForm === "paste-ledger") {
+      await applyPastedLedger(form);
+      return;
+    }
     if (globalThis.tripAccess?.canEdit?.() === false) {
       setNotice("当前是只读，不能修改。");
       return;

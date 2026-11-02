@@ -828,6 +828,18 @@ async function loadSharedState() {
   }
 }
 
+window.addEventListener("travel-ledger:imported", () => {
+  void (async () => {
+    try {
+      await loadSharedState();
+      if (moduleEnabled("todo")) renderTravelPrep();
+      if (moduleEnabled("itinerary")) renderTimeline();
+    } catch (error) {
+      console.error("Imported runtime data could not refresh the page", error);
+    }
+  })();
+});
+
 async function saveSharedChange(collection, value, op = "upsert") {
   const adapter = state.runtimeAdapters[collection];
   if (!adapter) return null;
