@@ -9,7 +9,7 @@
     "boundaries:validate": "node scripts/validate-boundaries.mjs",
     "build:map": "node scripts/build-map.mjs",
     "validate": "node scripts/validate-lite.mjs",
-    "test:runtime": "node --test tests/runtime/runtime-storage.test.cjs",
+    "test:runtime": "node --test tests/runtime/runtime-storage.test.cjs tests/runtime/ledger-upload-once.test.cjs",
     "preview": "node local-preview-server.mjs"
   }
 }
