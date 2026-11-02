@@ -1579,24 +1579,26 @@
       setNotice("记账格式不对，没有写入。");
       return;
     }
+    const incoming = normalizeData(parsed);
     try {
-      const saved = await Promise.resolve(ledgerAdapter.save(normalizeData(parsed), { tripId: ledgerTripId }));
-      ledgerData = normalizeData(saved || parsed);
+      await enqueueMutation(async () => {
+        const saved = await Promise.resolve(ledgerAdapter.save(incoming, { tripId: ledgerTripId }));
+        ledgerData = normalizeData(saved || incoming);
+        editingBillId = null;
+        editingMemberId = null;
+        editingFamilyId = null;
+        editingNoteBillId = null;
+        openDialogName = null;
+        billDraft = null;
+        ledgerTransferMode = "";
+        ledgerTransferText = "";
+        notice = "记账已粘贴。";
+        renderApp();
+        ledgerRoot.dispatchEvent(new CustomEvent("travel-ledger:imported", { bubbles: true }));
+      });
     } catch {
       setNotice("写入失败，现有记账没有改动。");
-      return;
     }
-    editingBillId = null;
-    editingMemberId = null;
-    editingFamilyId = null;
-    editingNoteBillId = null;
-    openDialogName = null;
-    billDraft = null;
-    ledgerTransferMode = "";
-    ledgerTransferText = "";
-    notice = "记账已粘贴。";
-    renderApp();
-    ledgerRoot.dispatchEvent(new CustomEvent("travel-ledger:imported", { bubbles: true }));
   }
 
   function setNotice(message) {
@@ -2362,9 +2364,30 @@
     return `travel-plan:runtime:v1:${encodeURIComponent(ledgerTripId || "default-trip")}`;
   }
 
+  function localLedgerUploadMarkerKey() {
+    return `travel-plan:runtime:v1:ledger-uploaded:${encodeURIComponent(ledgerTripId || "default-trip")}`;
+  }
+
+  function localLedgerWasUploaded() {
+    try {
+      return globalThis.localStorage?.getItem(localLedgerUploadMarkerKey()) === "1";
+    } catch {
+      return false;
+    }
+  }
+
+  function rememberLocalLedgerUploaded() {
+    try {
+      globalThis.localStorage?.setItem(localLedgerUploadMarkerKey(), "1");
+    } catch (error) {
+      console.error("TravelLedger could not remember the local ledger upload", error);
+    }
+  }
+
   async function adoptLocalLedgerIfCloudEmpty(remote) {
     const remoteData = normalizeData(remote);
     if (remoteData.travelers.length || remoteData.bills.length) return remote;
+    if (localLedgerWasUploaded()) return remote;
     if (globalThis.tripAccess?.canEdit?.() === false) return remote;
     const localAdapter = createLocalStorageAdapter(ledgerTripId, { storageKey: legacyLocalLedgerKey() });
     let localRaw = null;
@@ -2378,6 +2401,7 @@
     if (!localData.travelers.length && !localData.bills.length) return remote;
     try {
       const saved = await Promise.resolve(ledgerAdapter.save(localData, { tripId: ledgerTripId }));
+      rememberLocalLedgerUploaded();
       notice = "已把这台浏览器的记账上传到共享账本。";
       return saved || localData;
     } catch (error) {
