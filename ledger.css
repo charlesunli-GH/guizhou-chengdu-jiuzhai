@@ -429,6 +429,29 @@ body[data-active-view="ledger"] .topbar { background: rgba(250, 251, 249, .93); 
 .ledger-member-stat-body { padding: 0 17px 17px; }
 .ledger-member-metrics { padding-top: 14px; }
 
+/* 成员菜单：名单单独滚动，添加栏留在滚动区外面，人多时仍能点到「添加」。 */
+.ledger-members-dialog[data-ledger-dialog="members"][open] {
+  display: flex;
+  flex-direction: column;
+}
+.ledger-members-dialog[data-ledger-dialog="members"] .ledger-dialog-header,
+.ledger-members-dialog[data-ledger-dialog="members"] .ledger-add-member-form,
+.ledger-members-dialog[data-ledger-dialog="members"] .ledger-dialog-note {
+  flex: 0 0 auto;
+}
+.ledger-members-dialog[data-ledger-dialog="members"] .ledger-dialog-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.ledger-members-dialog[data-ledger-dialog="members"] .ledger-member-edit-list {
+  min-height: 0;
+  max-height: min(48dvh, 440px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 @media (max-width: 420px) {
   .ledger-person-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap-inline: 1px; }
   .ledger-person-choice { width: 46px; }
