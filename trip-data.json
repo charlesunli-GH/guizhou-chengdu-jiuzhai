@@ -13,7 +13,9 @@
     },
     "language": "zh-CN",
     "persistence": {
-      "mode": "local"
+      "mode": "d1",
+      "apiBase": "/api/trip",
+      "sharedCollections": ["ledger"]
     }
   },
   "metadata": {
