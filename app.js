@@ -3,7 +3,7 @@ const state = {
   config: null,
   runtimeAdapters: {},
   expandedDay: null,
-  countdownTimer: null,
+  refreshing: false,
   purchasedTickets: new Set(),
   todos: []
 };
@@ -1012,11 +1012,23 @@ function setupPlaceMap() {
 function startCountdowns() {
   if (moduleEnabled("flights")) updateFlightCountdowns();
   if (moduleEnabled("driving")) updateRentalCountdown();
-  if (!moduleEnabled("flights") && !moduleEnabled("driving")) return;
-  state.countdownTimer = window.setInterval(() => {
+}
+
+async function refreshPage() {
+  if (state.refreshing) return;
+  state.refreshing = true;
+  const button = $("#page-refresh");
+  if (button) button.disabled = true;
+  const scrollY = window.scrollY;
+  try {
     if (moduleEnabled("flights")) updateFlightCountdowns();
     if (moduleEnabled("driving")) updateRentalCountdown();
-  }, 1000);
+    if (moduleEnabled("ledger")) await window.TravelLedger?.refresh?.();
+    window.scrollTo({ top: scrollY });
+  } finally {
+    state.refreshing = false;
+    if (button) button.disabled = false;
+  }
 }
 
 function preloadDefaultRouteMap() {
@@ -1065,6 +1077,8 @@ async function init() {
       await window.TravelLedger?.init?.({ tripId: state.data.metadata.tripId, config: state.config });
     }
     startCountdowns();
+    globalThis.refreshTravelPage = refreshPage;
+    $("#page-refresh")?.addEventListener("click", () => { void refreshPage(); });
     globalThis.tripLanguage?.apply(document.body);
   } catch (error) {
     console.error("Travel data could not be loaded", error);

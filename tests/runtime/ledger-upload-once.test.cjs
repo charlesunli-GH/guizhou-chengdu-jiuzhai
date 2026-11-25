@@ -385,3 +385,37 @@ test("pasting waits for an in-flight bill save and keeps the pasted ledger", asy
   assert.equal(saves.at(-1).bills[0].id, "bill-paste");
   assert.equal(saves[0].bills.some((entry) => entry.id === "bill-paste"), false);
 });
+
+test("the ledger stays as it is until refresh is requested", async () => {
+  let loads = 0;
+  let remote = snapshot([traveler("person-a", "甲")], [bill("bill-a", "person-a")]);
+  const { ledger } = await openLedger(memoryStorage(), null, {
+    mode: "d1",
+    async load() {
+      loads += 1;
+      return remote;
+    },
+    async save(next) {
+      return next;
+    }
+  });
+  assert.equal(loads, 1);
+  assert.equal(ledger.getSnapshot().bills.length, 1);
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  assert.equal(loads, 1);
+
+  remote = snapshot(
+    [traveler("person-a", "甲"), traveler("person-b", "乙")],
+    [bill("bill-a", "person-a"), bill("bill-b", "person-b", 200)]
+  );
+  const refreshed = await ledger.refresh();
+  assert.equal(loads, 2);
+  assert.equal(refreshed.bills.length, 2);
+  assert.equal(refreshed.travelers[1].name, "乙");
+  assert.equal(ledger.getSnapshot().bills[1].id, "bill-b");
+
+  const pageSource = fs.readFileSync(path.resolve(__dirname, "../../app.js"), "utf8");
+  const pageHtml = fs.readFileSync(path.resolve(__dirname, "../../index.html"), "utf8");
+  assert.equal(pageSource.includes("setInterval"), false);
+  assert.equal(pageHtml.includes('id="page-refresh"'), true);
+});

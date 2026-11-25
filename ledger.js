@@ -159,6 +159,7 @@
   let ledgerTransferFocus = false;
   let ledgerTransferEpoch = 0;
   let sharedLedgerReady = true;
+  let refreshing = false;
 
   function normalizeSearch(value) {
     return String(value || "")
@@ -1371,6 +1372,7 @@
         <header class="ledger-page-header">
           <h1>旅行记账</h1>
           <div class="ledger-header-actions">
+            <button class="ledger-icon-button" type="button" data-ledger-action="refresh-ledger">刷新</button>
             <button class="ledger-icon-button" type="button" data-ledger-action="open-settings" aria-label="记账设置">设置</button>
           </div>
         </header>
@@ -2271,6 +2273,11 @@
       copyLedger();
       return;
     }
+    if (action === "refresh-ledger") {
+      if (typeof globalThis.refreshTravelPage === "function") void globalThis.refreshTravelPage();
+      else void refreshLedger();
+      return;
+    }
     const insideNoteForm = button.closest('[data-ledger-form="bill-note"]');
     if (editingNoteBillId
       && !insideNoteForm
@@ -2411,6 +2418,35 @@
     }
   }
 
+  async function refreshLedger() {
+    if (!initialized || !ledgerAdapter || refreshing) return ledgerData ? deepClone(ledgerData) : null;
+    refreshing = true;
+    const scrollY = Number(globalThis.scrollY) || 0;
+    try {
+      if (editingNoteBillId && !(await flushActiveBillNote())) {
+        setNotice("备注还没保存，没有刷新。");
+        return null;
+      }
+      captureBillDraft();
+      let stored = null;
+      try {
+        stored = await Promise.resolve(ledgerAdapter.load({ tripId: ledgerTripId }));
+        sharedLedgerReady = true;
+      } catch (error) {
+        console.error("TravelLedger could not refresh", error);
+        setNotice("刷新失败，页面上的账还是刚才那份。");
+        return null;
+      }
+      ledgerData = normalizeData(stored);
+      notice = "已刷新。";
+      renderApp();
+      if (typeof globalThis.scrollTo === "function") globalThis.scrollTo({ top: scrollY });
+      return deepClone(ledgerData);
+    } finally {
+      refreshing = false;
+    }
+  }
+
   async function init(options = {}) {
     const requestedRoot = typeof options.root === "string"
       ? document.querySelector(options.root)
@@ -2463,6 +2499,7 @@
 
   const publicApi = {
     init,
+    refresh: refreshLedger,
     setActiveTab,
     createLocalStorageAdapter,
     createD1Adapter,
