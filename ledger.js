@@ -159,6 +159,7 @@
   let ledgerTransferFocus = false;
   let ledgerTransferEpoch = 0;
   let sharedLedgerReady = true;
+  let refreshing = false;
 
   function normalizeSearch(value) {
     return String(value || "")
@@ -437,31 +438,41 @@
     }
     const apiBase = rawApiBase.replace(/\/+$/, "") || "/";
     const endpoint = `${apiBase}/${encodeURIComponent(tripId)}?collections=bills%2Ctravelers`;
+    let queue = Promise.resolve();
+    function enqueue(operation) {
+      const pending = queue.then(operation, operation);
+      queue = pending.catch(() => {});
+      return pending;
+    }
     return {
       mode: "d1",
       async load() {
-        const response = await fetch(endpoint, { cache: "no-store" });
-        if (!response.ok) throw new Error(`API ${response.status}`);
-        previous = await response.json();
-        return previous;
+        return enqueue(async () => {
+          const response = await fetch(endpoint, { cache: "no-store" });
+          if (!response.ok) throw new Error(`API ${response.status}`);
+          previous = await response.json();
+          return previous;
+        });
       },
       async save(next) {
-        const changes = [];
-        for (const collection of collections) {
-          const before = new Map((previous?.[collection] || []).map((item) => [item.id, item]));
-          const after = new Map((next[collection] || []).map((item) => [item.id, item]));
-          before.forEach((_, id) => { if (!after.has(id)) changes.push({ op: "delete", collection, id }); });
-          after.forEach((value, id) => {
-            if (JSON.stringify(before.get(id)) !== JSON.stringify(value)) changes.push({ op: "upsert", collection, id, value });
+        return enqueue(async () => {
+          const changes = [];
+          for (const collection of collections) {
+            const before = new Map((previous?.[collection] || []).map((item) => [item.id, item]));
+            const after = new Map((next[collection] || []).map((item) => [item.id, item]));
+            before.forEach((_, id) => { if (!after.has(id)) changes.push({ op: "delete", collection, id }); });
+            after.forEach((value, id) => {
+              if (JSON.stringify(before.get(id)) !== JSON.stringify(value)) changes.push({ op: "upsert", collection, id, value });
+            });
+          }
+          const response = await fetch(endpoint, {
+            method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ changes })
           });
-        }
-        const response = await fetch(endpoint, {
-          method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ changes })
+          if (!response.ok) throw new Error(`API ${response.status}`);
+          previous = await response.json();
+          // The server is authoritative and merges record-level changes atomically.
+          Object.assign(next, previous);
         });
-        if (!response.ok) throw new Error(`API ${response.status}`);
-        previous = await response.json();
-        // The server is authoritative and merges record-level changes atomically.
-        Object.assign(next, previous);
       }
     };
   }
@@ -1371,6 +1382,7 @@
         <header class="ledger-page-header">
           <h1>旅行记账</h1>
           <div class="ledger-header-actions">
+            <button class="ledger-icon-button" type="button" data-ledger-action="refresh-ledger">刷新</button>
             <button class="ledger-icon-button" type="button" data-ledger-action="open-settings" aria-label="记账设置">设置</button>
           </div>
         </header>
@@ -2271,6 +2283,11 @@
       copyLedger();
       return;
     }
+    if (action === "refresh-ledger") {
+      if (typeof globalThis.refreshTravelPage === "function") void globalThis.refreshTravelPage();
+      else void refreshLedger();
+      return;
+    }
     const insideNoteForm = button.closest('[data-ledger-form="bill-note"]');
     if (editingNoteBillId
       && !insideNoteForm
@@ -2411,6 +2428,36 @@
     }
   }
 
+  async function refreshLedger() {
+    if (!initialized || !ledgerAdapter || refreshing) return ledgerData ? deepClone(ledgerData) : null;
+    refreshing = true;
+    const scrollY = Number(globalThis.scrollY) || 0;
+    try {
+      if (editingNoteBillId && !(await flushActiveBillNote())) {
+        setNotice("备注还没保存，没有刷新。");
+        return null;
+      }
+      captureBillDraft();
+      return await enqueueMutation(async () => {
+        try {
+          const stored = await Promise.resolve(ledgerAdapter.load({ tripId: ledgerTripId }));
+          sharedLedgerReady = true;
+          ledgerData = normalizeData(stored);
+          notice = "已刷新。";
+          renderApp();
+          if (typeof globalThis.scrollTo === "function") globalThis.scrollTo({ top: scrollY });
+          return deepClone(ledgerData);
+        } catch (error) {
+          console.error("TravelLedger could not refresh", error);
+          setNotice("刷新失败，页面上的账还是刚才那份。");
+          return null;
+        }
+      });
+    } finally {
+      refreshing = false;
+    }
+  }
+
   async function init(options = {}) {
     const requestedRoot = typeof options.root === "string"
       ? document.querySelector(options.root)
@@ -2463,6 +2510,7 @@
 
   const publicApi = {
     init,
+    refresh: refreshLedger,
     setActiveTab,
     createLocalStorageAdapter,
     createD1Adapter,
