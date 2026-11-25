@@ -419,3 +419,63 @@ test("the ledger stays as it is until refresh is requested", async () => {
   assert.equal(pageSource.includes("setInterval"), false);
   assert.equal(pageHtml.includes('id="page-refresh"'), true);
 });
+
+test("refresh waits for an in-flight save before reloading", async () => {
+  let releaseSave = null;
+  const gate = new Promise((resolve) => {
+    releaseSave = resolve;
+  });
+  let loads = 0;
+  const saves = [];
+  const { ledger, root } = await openLedger(memoryStorage(), null, {
+    mode: "d1",
+    async load() {
+      loads += 1;
+      if (loads === 1) return snapshot([traveler("person-a", "甲")], [bill("bill-a", "person-a")]);
+      return snapshot(
+        [traveler("person-a", "甲"), traveler("person-b", "云端乙")],
+        [bill("bill-a", "person-a"), bill("bill-cloud", "person-b", 200)]
+      );
+    },
+    async save(next) {
+      saves.push(JSON.parse(JSON.stringify(next)));
+      if (saves.length === 1) await gate;
+      return next;
+    }
+  });
+  const loadsAfterInit = loads;
+  root.dispatchEvent({
+    type: "submit",
+    preventDefault() {},
+    target: {
+      dataset: { ledgerForm: "bill" },
+      fields: {
+        currency: "CNY",
+        originalAmount: "12.00",
+        category: "餐饮",
+        payerId: "person-a",
+        note: "在途",
+        orderedAt: "2024-08-03"
+      },
+      fieldsAll: { participantIds: ["person-a"] },
+      closest(selector) {
+        return selector.startsWith("form") ? this : null;
+      },
+      querySelector() {
+        return null;
+      },
+      elements: {}
+    }
+  });
+  await waitFor(() => saves.length === 1);
+  const refreshPromise = ledger.refresh();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(loads, loadsAfterInit);
+  assert.equal(saves[0].bills.some((entry) => entry.id === "bill-cloud"), false);
+
+  releaseSave();
+  const refreshed = await refreshPromise;
+  assert.equal(loads, loadsAfterInit + 1);
+  assert.equal(refreshed.bills.some((entry) => entry.id === "bill-cloud"), true);
+  assert.equal(saves.length, 1);
+});

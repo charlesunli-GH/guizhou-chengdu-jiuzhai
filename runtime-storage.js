@@ -244,7 +244,7 @@
       tripId,
       apiBase,
       async load() {
-        return request("GET");
+        return enqueue(() => request("GET"));
       },
       async save(snapshot) {
         return enqueue(async () => {

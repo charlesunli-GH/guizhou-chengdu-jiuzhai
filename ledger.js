@@ -438,31 +438,41 @@
     }
     const apiBase = rawApiBase.replace(/\/+$/, "") || "/";
     const endpoint = `${apiBase}/${encodeURIComponent(tripId)}?collections=bills%2Ctravelers`;
+    let queue = Promise.resolve();
+    function enqueue(operation) {
+      const pending = queue.then(operation, operation);
+      queue = pending.catch(() => {});
+      return pending;
+    }
     return {
       mode: "d1",
       async load() {
-        const response = await fetch(endpoint, { cache: "no-store" });
-        if (!response.ok) throw new Error(`API ${response.status}`);
-        previous = await response.json();
-        return previous;
+        return enqueue(async () => {
+          const response = await fetch(endpoint, { cache: "no-store" });
+          if (!response.ok) throw new Error(`API ${response.status}`);
+          previous = await response.json();
+          return previous;
+        });
       },
       async save(next) {
-        const changes = [];
-        for (const collection of collections) {
-          const before = new Map((previous?.[collection] || []).map((item) => [item.id, item]));
-          const after = new Map((next[collection] || []).map((item) => [item.id, item]));
-          before.forEach((_, id) => { if (!after.has(id)) changes.push({ op: "delete", collection, id }); });
-          after.forEach((value, id) => {
-            if (JSON.stringify(before.get(id)) !== JSON.stringify(value)) changes.push({ op: "upsert", collection, id, value });
+        return enqueue(async () => {
+          const changes = [];
+          for (const collection of collections) {
+            const before = new Map((previous?.[collection] || []).map((item) => [item.id, item]));
+            const after = new Map((next[collection] || []).map((item) => [item.id, item]));
+            before.forEach((_, id) => { if (!after.has(id)) changes.push({ op: "delete", collection, id }); });
+            after.forEach((value, id) => {
+              if (JSON.stringify(before.get(id)) !== JSON.stringify(value)) changes.push({ op: "upsert", collection, id, value });
+            });
+          }
+          const response = await fetch(endpoint, {
+            method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ changes })
           });
-        }
-        const response = await fetch(endpoint, {
-          method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ changes })
+          if (!response.ok) throw new Error(`API ${response.status}`);
+          previous = await response.json();
+          // The server is authoritative and merges record-level changes atomically.
+          Object.assign(next, previous);
         });
-        if (!response.ok) throw new Error(`API ${response.status}`);
-        previous = await response.json();
-        // The server is authoritative and merges record-level changes atomically.
-        Object.assign(next, previous);
       }
     };
   }
@@ -2428,20 +2438,21 @@
         return null;
       }
       captureBillDraft();
-      let stored = null;
-      try {
-        stored = await Promise.resolve(ledgerAdapter.load({ tripId: ledgerTripId }));
-        sharedLedgerReady = true;
-      } catch (error) {
-        console.error("TravelLedger could not refresh", error);
-        setNotice("刷新失败，页面上的账还是刚才那份。");
-        return null;
-      }
-      ledgerData = normalizeData(stored);
-      notice = "已刷新。";
-      renderApp();
-      if (typeof globalThis.scrollTo === "function") globalThis.scrollTo({ top: scrollY });
-      return deepClone(ledgerData);
+      return await enqueueMutation(async () => {
+        try {
+          const stored = await Promise.resolve(ledgerAdapter.load({ tripId: ledgerTripId }));
+          sharedLedgerReady = true;
+          ledgerData = normalizeData(stored);
+          notice = "已刷新。";
+          renderApp();
+          if (typeof globalThis.scrollTo === "function") globalThis.scrollTo({ top: scrollY });
+          return deepClone(ledgerData);
+        } catch (error) {
+          console.error("TravelLedger could not refresh", error);
+          setNotice("刷新失败，页面上的账还是刚才那份。");
+          return null;
+        }
+      });
     } finally {
       refreshing = false;
     }

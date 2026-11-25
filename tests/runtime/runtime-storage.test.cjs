@@ -151,6 +151,76 @@ test("D1 requires and enforces an explicit collection allowlist", async () => {
   }
 });
 
+test("a D1 reload waits behind an in-flight save and does not delete bills the save never had", async () => {
+  const originalFetch = global.fetch;
+  const calls = [];
+  let remoteBills = [{ id: "bill-a", note: "old" }];
+  global.fetch = async (_url, init = {}) => {
+    const method = init.method || "GET";
+    if (method === "GET") {
+      calls.push("GET");
+      return {
+        ok: true,
+        async json() {
+          return {
+            version: 1,
+            settings: null,
+            bills: remoteBills.map((bill) => ({ ...bill })),
+            travelers: [],
+            todos: [],
+            tickets: [],
+            updatedAt: "2024-08-01T00:00:00.000Z"
+          };
+        }
+      };
+    }
+    const changes = JSON.parse(init.body).changes;
+    calls.push(changes.map((change) => `${change.op}:${change.collection}:${change.id}`));
+    return {
+      ok: true,
+      async json() {
+        return {
+          version: 1,
+          settings: null,
+          bills: [{ id: "bill-a", note: "edited" }],
+          travelers: [],
+          todos: [],
+          tickets: [],
+          updatedAt: "2024-08-02T00:00:00.000Z"
+        };
+      }
+    };
+  };
+  try {
+    const adapter = storageRuntime.createAdapter({
+      mode: "d1",
+      tripId: "race-trip",
+      collections: ["settings", "bills", "travelers"],
+      storage: createMemoryStorage()
+    });
+    await adapter.load();
+    remoteBills = [{ id: "bill-a", note: "old" }, { id: "bill-b", note: "cloud" }];
+    const saving = adapter.save({
+      version: 1,
+      settings: { baseCurrency: "CNY" },
+      bills: [{ id: "bill-a", note: "edited" }],
+      travelers: [],
+      updatedAt: "2024-08-02T00:00:00.000Z"
+    });
+    const loading = adapter.load();
+    await saving;
+    await loading;
+    const posted = calls.filter((entry) => Array.isArray(entry)).flat();
+    assert.equal(posted.includes("delete:bills:bill-b"), false);
+    assert.equal(posted.includes("upsert:bills:bill-a"), true);
+    assert.deepEqual(calls.filter((entry) => entry === "GET").length, 2);
+    assert.ok(calls.indexOf("GET") < calls.findIndex((entry) => Array.isArray(entry)));
+    assert.ok(calls.findIndex((entry) => Array.isArray(entry)) < calls.lastIndexOf("GET"));
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test("D1 rejects cross-origin and backslash apiBase values", () => {
   for (const apiBase of ["https://evil.example/api", "//evil.example/api", "/\\evil.example/api", "/api/trip?leak=1"]) {
     assert.throws(() => storageRuntime.createAdapter({ mode: "d1", tripId: "shared-trip", collections: ["todos"], apiBase }), /same-origin/);
